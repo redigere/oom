@@ -1,0 +1,17 @@
+---
+type: dict
+required:
+  - items
+properties:
+  items:
+    type: list
+    items:
+      type: dict
+      required:
+        - task
+        - status
+        - description
+      properties:
+        task: {type: str}
+        status: {type: str}
+        description: {type: str}

@@ -1,0 +1,46 @@
+---
+type: dict
+required:
+  - yamllint_strict
+  - ansible_lint_profile
+  - ansible_lint_result
+  - ansible_playbook_syntax
+  - validate_formulas
+  - verify_structure
+properties:
+  yamllint_strict: {type: str}
+  ansible_lint_profile: {type: str}
+  ansible_lint_result: {type: str}
+  ansible_playbook_syntax: {type: str}
+  validate_formulas:
+    type: dict
+    required:
+      - status
+      - formula_count
+      - zero_division_guard
+      - constants_extracted
+      - reference_points_computed
+      - test_ranges_derived_from_bounds
+      - checks
+    properties:
+      status: {type: str}
+      formula_count: {type: int}
+      zero_division_guard: {type: bool}
+      constants_extracted: {type: bool}
+      reference_points_computed: {type: bool}
+      test_ranges_derived_from_bounds: {type: bool}
+      checks: {type: list}
+  verify_structure:
+    type: dict
+    required:
+      - status
+      - checker
+      - dynamic_discovery
+      - handoff_schema_agnostic
+      - checks
+    properties:
+      status: {type: str}
+      checker: {type: str}
+      dynamic_discovery: {type: bool}
+      handoff_schema_agnostic: {type: bool}
+      checks: {type: list}

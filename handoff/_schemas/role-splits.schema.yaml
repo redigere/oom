@@ -1,0 +1,21 @@
+---
+type: dict
+required:
+  - roles
+  - total_subfiles
+properties:
+  roles:
+    type: list
+    items:
+      type: dict
+      required:
+        - name
+        - subfiles
+        - main_imports
+      properties:
+        name: {type: str}
+        subfiles: {type: list}
+        main_imports: {type: int}
+        status: {type: str}
+        description: {type: str}
+  total_subfiles: {type: int}

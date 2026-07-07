@@ -1,0 +1,26 @@
+---
+type: dict
+required:
+  - workflows
+  - scripts
+properties:
+  workflows:
+    type: list
+    items:
+      type: dict
+      required:
+        - name
+        - jobs
+      properties:
+        name: {type: str}
+        jobs: {type: list}
+  scripts:
+    type: list
+    items:
+      type: dict
+      required:
+        - path
+        - scope
+      properties:
+        path: {type: str}
+        scope: {type: str}

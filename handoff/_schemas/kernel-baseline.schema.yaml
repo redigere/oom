@@ -1,0 +1,41 @@
+---
+type: dict
+required:
+  - current_kernel
+  - previous_kernel
+  - first_detected
+  - features
+  - sysctl_defaults
+  - validation
+properties:
+  current_kernel: {type: str}
+  previous_kernel: {type: str}
+  first_detected: {type: str}
+  features:
+    type: dict
+    required:
+      - mglru
+      - psi
+      - zram
+    properties:
+      mglru: {type: str}
+      psi: {type: str}
+      zram: {type: str}
+  sysctl_defaults:
+    type: dict
+    required:
+      - vm.swappiness
+      - vm.watermark_scale_factor
+      - vm.vfs_cache_pressure
+    properties:
+      vm.swappiness: {type: str}
+      vm.watermark_scale_factor: {type: str}
+      vm.vfs_cache_pressure: {type: str}
+  validation:
+    type: dict
+    required:
+      - formulas
+      - structure
+    properties:
+      formulas: {type: str}
+      structure: {type: str}

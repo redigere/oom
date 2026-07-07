@@ -1,0 +1,28 @@
+---
+type: dict
+required:
+  - implementation_status
+  - hardcoded_values
+  - threshold_branches
+  - fixed_values
+  - machine_range_gb
+  - formula_type
+  - cross_role_coupling
+  - role_split
+  - comments
+  - debug_tasks
+  - print_statements
+  - visual_decorations
+properties:
+  implementation_status: {type: str}
+  hardcoded_values: {type: bool}
+  threshold_branches: {type: bool}
+  fixed_values: {type: bool}
+  machine_range_gb: {type: str}
+  formula_type: {type: str}
+  cross_role_coupling: {type: str}
+  role_split: {type: str}
+  comments: {type: bool}
+  debug_tasks: {type: bool}
+  print_statements: {type: bool}
+  visual_decorations: {type: bool}
