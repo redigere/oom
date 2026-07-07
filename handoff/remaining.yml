@@ -244,3 +244,43 @@ items:
       monitor.yml. Gates enable/start on stat.exists instead of
       status.LoadState. Matches pattern used by zram_swap and
       oom_handler for Docker compatibility.
+  - task: "fix: debian: zram_systemd_docker"
+    status: completed
+    description: >-
+      Replaced ansible.builtin.systemd with ansible.builtin.stat
+      in config-debian.yml for ZRAM service check. Same
+      systemd-in-Docker fix applied to Debian-specific path.
+  - task: "fix: ci: set_e_mask"
+    status: completed
+    description: >-
+      Changed run patterns from 'cmd; echo' to raw commands in
+      container-test.yml. With set -e (GH Actions default), the
+      semicolon pattern never reached echo. Error masking
+      removed; jobs pass only when failed=0.
+  - task: "fix: ansible11: type_safety"
+    status: completed
+    description: >-
+      Ansible 11 stores set_fact values as AnsibleUnsafeText
+      (string) even for computed integers. Added | int to all
+      computed facts in compute-facts.yml and to all arithmetic
+      in templates (config.yml earlyoom args). Prevents
+      'unsupported operand' error on division/multiplication.
+  - task: "fix: debian: universe_repo_ci"
+    status: completed
+    description: >-
+      Added sed to enable universe repo in Debian CI container.
+      earlyoom and zram-tools packages are in universe, not
+      available in default main/restricted repos of ubuntu:22.04.
+  - task: "ci: signoff_name_format"
+    status: completed
+    description: >-
+      check-commit-convention.py and commit-signoff job now
+      validate sign-off name has at least two words (firstname
+      lastname). Single-word nicknames/usernames rejected.
+      DEV.md and AGENTS.md updated with format requirement.
+  - task: "fix: yamllint: trailing_spaces_120chars"
+    status: completed
+    description: >-
+      Fixed trailing whitespace and 125-char line in
+      config.yml. Template expression split across two lines
+      inside {{ }} to comply with yamllint 120-char limit.
