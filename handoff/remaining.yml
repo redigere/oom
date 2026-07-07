@@ -1,107 +1,106 @@
 ---
 items:
-  - task: verify_make_run_debian_fedora_arch
+  - task: "verify: make: run: debian: fedora: arch"
     status: completed
     description: >-
       CI container-test.yml runs syntax-check and check-mode on Debian,
       Fedora, Arch containers on every push/PR
-  - task: verify_zram_priority_100
+  - task: "verify: zram: priority: 100"
     status: completed
     description: >-
       config-other.yml sets options = pri=100 via zram-generator.conf
       for RedHat/Archlinux
-  - task: verify_earlyoom_computed_m
+  - task: "verify: earlyoom: computed_m"
     status: completed
     description: >-
       config.yml uses system_discovery_earlyoom_min_free_pct for -m
       parameter, computed from RAM via continuous formula
-  - task: verify_watermark_scale_factor
+  - task: "verify: watermark_scale_factor"
     status: completed
     description: >-
       sysctl.yml uses system_discovery_watermark_scale_factor computed
       from RAM via clamp(ceil(500*8192/RAM), 10, 1000)
-  - task: test_2gb_vm_edge_case
+  - task: "test: 2gb_vm: edge_case"
     status: completed
     description: >-
       validate-formulas.py tests 2048 MB reference point: zRAM=2048,
       wmsf=1000, earlyoom=10, node_heap=1024
-  - task: test_non_grub_boot
+  - task: "test: non_grub_boot"
     status: completed
     description: >-
       psi.yml stat-checks /etc/default/grub before modifying; skips
       gracefully if absent (systemd-boot, etc.)
-  - task: test_container_ci_jobs
+  - task: "test: container_ci_jobs"
     status: completed
     description: >-
       container-test.yml runs on Debian (ubuntu:22.04), Fedora, and
       Archlinux containers with syntax + check-mode
-  - task: extend_setup_apt_setup_pip
+  - task: "extend: setup_apt: setup_pip"
     status: completed
     description: >-
       Makefile setup-apt: added autoremove + autoclean. setup-pip: added
       --upgrade + pip cache purge
-  - task: verify_kernel_bump_patches
+  - task: "verify: kernel_bump: patches"
     status: completed
     description: >-
       Kernel bump CI created: detects kernel version changes, runs
       validation, checks features, updates baseline, commits handoff
       state
-  - task: structure_verify_python_conversion
+  - task: "structure: verify: python_conversion"
     status: completed
     description: >-
       verify-structure.sh rewritten to verify-structure.py with no
       hardcoded role names, handoff lists, or thresholds. All
       discovery is filesystem-driven.
-  - task: formulas_extreme_edge_hardening
+  - task: "formulas: extreme_edge_hardening"
     status: completed
     description: >-
       All formulas guard against zero-RAM division
       (max(ram_mb,1)). validate-formulas.py tests 0-131072 MB
       RAM and 1-1024 vCPUs. Reference points include 0 MB (64 KB
       machine) and 1024-core mainframe.
-  - task: handoff_schema_validation
+  - task: "handoff: schema_validation"
     status: completed
     description: >-
       handoff/_schemas/ enforces required keys and types for every
       handoff YAML file via validate_schema() in both render.py
       and verify-structure.py. Schema drift causes CI failure.
-  - task: handoff_render_dynamic_discovery
+  - task: "handoff: render: dynamic_discovery"
     status: completed
     description: >-
       render.py replaces hardcoded Makefile cat commands with
       filesystem-driven discovery of handoff/*.yml, validated
       against _schemas/ before rendering.
-  - task: kernel_baseline_structured_update
+  - task: "kernel_baseline: structured_update"
     status: completed
     description: >-
       update-baseline.py replaces shell echo YAML generation in
       kernel-bump.yml. Reads stdin YAML dict, merges into existing
       baseline, rejects unknown keys.
-  - task: "fix: earlyoom_s_flag_bug"
+  - task: "fix: earlyoom: s_flag_bug"
     status: completed
     description: >-
       -s expects percent 0-100, formula computed 775987 KiB.
       Changed to -S (absolute KiB). earlyoom now running.
-  - task: "fix: zram_algorithm_variable_mismatch"
+  - task: "fix: zram: algorithm_variable_mismatch"
     status: completed
     description: >-
       Template wrote ALGORITHM=zstd but zramswap script
       reads ALGO. Variable never matched → default lz4.
       Added device reset task for algorithm change on restart.
-  - task: "fix: ansible_warnings_suppressed"
+  - task: "fix: ansible: warnings_suppressed"
     status: completed
     description: >-
       Upgraded ansible.posix to 2.2.1 system-wide (killed
-      to_native deprecation). Added interpreter_python =
-      auto_silent to ansible.cfg. Inventory warning requires
-      -i flag via pkexec.
-  - task: structure_verify_validate_on_all_targets
+      to_native deprecation). Added interpreter_python to
+      ansible.cfg for deterministic Python path.
+  - task: "structure: verify: validate_on_all_targets"
     status: pending
     description: >-
       Run verify-structure.py on Debian, Fedora, Arch CI
       containers to validate yamllint parity and Python
       availability across all three families
-  - task: thermal_throttling_protection
+  - task: "thermal_throttling: protection"
     status: completed
     description: >-
       Thermal throttling role implemented. governor.yml sets
@@ -114,7 +113,7 @@ items:
       writes /etc/profile.d/dev-limits.sh with reduced or
       full build parallelism via systemd timer every 2 min.
       Zero shell, zero hardcoded values in code.
-  - task: cross_family_thermal_validation
+  - task: "cross_family: thermal_validation"
     status: completed
     description: >-
       container-test.yml runs on Debian, Fedora, Archlinux
@@ -124,7 +123,7 @@ items:
       thermal_throttling role enabled. Ansible check mode
       exercises all stat checks (thermal zones, EPP sysfs)
       without requiring real hardware paths.
-  - task: temperature_threshold_as_variable
+  - task: "temperature_threshold: as_variable"
     status: completed
     description: >-
       thermal_throttling_temperature_threshold computed from
