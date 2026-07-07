@@ -67,7 +67,19 @@ The production profile includes rules for: variable name prefixing, FQCN for bui
 
 ## Why Handoff Is a Directory Structure, Not a Flat File
 
-The handoff system at `handoff/` replaces `HANDOFF.md` with a structured directory of YAML files, each with single-responsibility scope. This mirrors the role task split pattern: one file per concern, machine-readable and human-readable, validated by CI. `state.yml` captures implementation posture, `validation.yml` records validation results, `ci.yml` describes the CI landscape, `role-splits.yml` enumerates the task split structure, and `remaining.yml` tracks pending work items. The `Makefile` exposes `make handoff` to display the full handoff state. The old `HANDOFF.md` flat file is removed — a linear document cannot express the five orthogonal concerns that the directory structure captures.
+The handoff system at `handoff/` replaces `HANDOFF.md` with a structured directory of YAML files, each with single-responsibility scope. This mirrors the role task split pattern: one file per concern, machine-readable and human-readable, validated by CI. `state.yml` captures implementation posture, `validation.yml` records validation results, `ci.yml` describes the CI landscape, `role-splits.yml` enumerates the task split structure, `remaining.yml` tracks pending work items, and `kernel-baseline.yml` tracks kernel version and feature state across CI runs. The old `HANDOFF.md` flat file is removed — a linear document cannot express the five orthogonal concerns that the directory structure captures.
+
+## Why Handoff Has YAML Schema Enforcement
+
+Every YAML file under `handoff/` has a corresponding schema in `handoff/_schemas/` that defines required keys and value types. Schemas are checked by two independent paths: `render.py` validates every file at display time, and `verify-structure.py` validates them in CI. This eliminates structural drift: adding a key to a YAML file without updating its schema causes a CI failure, and vice versa. Schemas use a lightweight YAML format (no external schema validator library) with recursive dict/list support, enforced by the `validate_schema()` function shared across both validators.
+
+## Why handoff/render.py Replaces Makefile cat Commands
+
+The previous `Makefile` `handoff` target listed each handoff file explicitly with `cat` and `@echo` — a hardcoded list that required editing when adding a new handoff file. `render.py` discovers `handoff/*.yml` at runtime via `glob`, validates each against its schema, and renders the file content. Adding a new handoff file now requires only creating the YAML file (and optionally a schema); `make handoff` includes it automatically. The `Makefile` target is a single `python3 handoff/render.py` call — no file list, no maintenance.
+
+## Why kernel-baseline.yml Is Written via update-baseline.py, Not Shell Echo
+
+The `kernel-bump.yml` workflow previously built `kernel-baseline.yml` using raw `echo` commands with string interpolation — fragile, untyped, and impossible to validate before writing. `update-baseline.py` reads a YAML dict from stdin, merges it into the existing baseline (preserving unspecified keys), and writes clean structured YAML. It also rejects unknown top-level keys, preventing silent misconfiguration. The script is invoked with a heredoc in CI, keeping the workflow readable while eliminating shell-based YAML generation.
 
 ## Why ansible_facts['*'] Instead of ansible_* Variables
 
