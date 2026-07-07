@@ -1,7 +1,7 @@
 ---
 - name: Check EarlyOOM Service Registration
-  ansible.builtin.systemd:
-    name: earlyoom
+  ansible.builtin.stat:
+    path: /usr/lib/systemd/system/earlyoom.service
   register: oom_handler_earlyoom_service_check
 
 - name: Restart and Enable EarlyOOM Service
@@ -12,5 +12,4 @@
     daemon_reload: true
   when:
     - oom_handler_earlyoom_config.changed
-    - oom_handler_earlyoom_service_check.status is defined
-    - oom_handler_earlyoom_service_check.status.LoadState != 'not-found'
+    - oom_handler_earlyoom_service_check.stat.exists

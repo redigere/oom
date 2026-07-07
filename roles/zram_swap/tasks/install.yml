@@ -3,7 +3,5 @@
   ansible.builtin.package:
     name: >-
       {{ (ansible_facts['os_family'] == 'Debian')
-      | ternary('zram-tools',
-        (ansible_facts['os_family'] == 'RedHat')
-        | ternary('systemd-zram-generator', 'zram-generator')) }}
+      | ternary('zram-tools', 'zram-generator') }}
     state: present
