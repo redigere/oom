@@ -14,6 +14,9 @@ jobs:
       image: ubuntu:22.04
     steps:
       - uses: actions/checkout@v4
+      - name: Add universe repository for earlyoom and zram-tools
+        run: |
+          sed -i '/^deb /{ /universe/! s/main restricted/& universe/ }' /etc/apt/sources.list
       - name: Install Ansible
         run: |
           apt-get update
@@ -26,7 +29,7 @@ jobs:
       - name: Validate OOM playbook syntax
         run: ansible-playbook playbook.yml --syntax-check
       - name: Dry-run OOM playbook check mode
-        run: 'ansible-playbook playbook.yml --check || echo "exit: $?"'
+        run: ansible-playbook playbook.yml --check
 
   fedora:
     runs-on: ubuntu-latest
@@ -44,7 +47,7 @@ jobs:
       - name: Validate OOM playbook syntax
         run: ansible-playbook playbook.yml --syntax-check
       - name: Dry-run OOM playbook check mode
-        run: 'ansible-playbook playbook.yml --check || echo "exit: $?"'
+        run: ansible-playbook playbook.yml --check
 
   archlinux:
     runs-on: ubuntu-latest
@@ -62,4 +65,4 @@ jobs:
       - name: Validate OOM playbook syntax
         run: ansible-playbook playbook.yml --syntax-check
       - name: Dry-run OOM playbook check mode
-        run: 'ansible-playbook playbook.yml --check || echo "exit: $?"'
+        run: ansible-playbook playbook.yml --check
