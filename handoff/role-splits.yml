@@ -31,11 +31,14 @@ roles:
       - write-profile.yml
     main_imports: 2
   - name: thermal_throttling
-    subfiles: []
-    main_imports: 0
-    status: pending
+    subfiles:
+      - governor.yml
+      - monitor.yml
+    main_imports: 2
+    status: implemented
     description: >-
-      Thermal throttling protection — monitors CPU package
-      temperature and throttling events, dynamically reduces
-      build parallelism. Design pending (see remaining.yml).
-total_subfiles: 15
+      Sets energy_performance_preference to balance_performance
+      via sysfs, persists via tmpfiles.d. Runs thermal monitor
+      systemd timer every 2 minutes, reduces build parallelism
+      when CPU temp >= 80C, restores when cool.
+total_subfiles: 17
