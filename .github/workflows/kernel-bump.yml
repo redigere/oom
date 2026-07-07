@@ -80,21 +80,23 @@ jobs:
         run: |
           OLD="${{ steps.baseline.outputs.old_kernel }}"
           [ -z "$OLD" ] && OLD='unknown'
-          echo "---" > handoff/kernel-baseline.yml
-          echo "current_kernel: ${{ steps.kernel.outputs.version }}" >> handoff/kernel-baseline.yml
-          echo "previous_kernel: ${OLD}" >> handoff/kernel-baseline.yml
-          echo "first_detected: $(date +%Y-%m-%d)" >> handoff/kernel-baseline.yml
-          echo "features:" >> handoff/kernel-baseline.yml
-          echo "  mglru: ${{ steps.features.outputs.mglru }}" >> handoff/kernel-baseline.yml
-          echo "  psi: ${{ steps.features.outputs.psi }}" >> handoff/kernel-baseline.yml
-          echo "  zram: ${{ steps.features.outputs.zram }}" >> handoff/kernel-baseline.yml
-          echo "sysctl_defaults:" >> handoff/kernel-baseline.yml
-          echo "  vm.swappiness: ${{ steps.features.outputs.swappiness }}" >> handoff/kernel-baseline.yml
-          echo "  vm.watermark_scale_factor: ${{ steps.features.outputs.wmsf }}" >> handoff/kernel-baseline.yml
-          echo "  vm.vfs_cache_pressure: ${{ steps.features.outputs.vcp }}" >> handoff/kernel-baseline.yml
-          echo "validation:" >> handoff/kernel-baseline.yml
-          echo "  formulas: ${{ steps.formulas.outputs.status }}" >> handoff/kernel-baseline.yml
-          echo "  structure: ${{ steps.structure.outputs.status }}" >> handoff/kernel-baseline.yml
+          cat > /tmp/baseline-update.yml << BASELINE_EOF
+          current_kernel: ${{ steps.kernel.outputs.version }}
+          previous_kernel: ${OLD}
+          first_detected: $(date +%Y-%m-%d)
+          features:
+            mglru: ${{ steps.features.outputs.mglru }}
+            psi: ${{ steps.features.outputs.psi }}
+            zram: ${{ steps.features.outputs.zram }}
+          sysctl_defaults:
+            vm.swappiness: ${{ steps.features.outputs.swappiness }}
+            vm.watermark_scale_factor: ${{ steps.features.outputs.wmsf }}
+            vm.vfs_cache_pressure: ${{ steps.features.outputs.vcp }}
+          validation:
+            formulas: ${{ steps.formulas.outputs.status }}
+            structure: ${{ steps.structure.outputs.status }}
+          BASELINE_EOF
+          python3 handoff/update-baseline.py < /tmp/baseline-update.yml
 
       - name: Commit kernel baseline
         if: steps.diff.outputs.changed == 'true'
