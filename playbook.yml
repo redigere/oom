@@ -8,3 +8,4 @@
     - zram_swap
     - oom_handler
     - dev_throttling
+    - thermal_throttling
