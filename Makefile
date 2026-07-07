@@ -25,16 +25,7 @@ status:
 	cat /sys/kernel/mm/lru_gen/enabled 2>&1; echo "exit: $$?"
 
 handoff:
-	@echo "state:"
-	cat handoff/state.yml
-	@echo "validation:"
-	cat handoff/validation.yml
-	@echo "ci:"
-	cat handoff/ci.yml
-	@echo "role-splits:"
-	cat handoff/role-splits.yml
-	@echo "remaining:"
-	cat handoff/remaining.yml
+	python3 handoff/render.py
 
 clean:
 	sudo systemctl stop earlyoom; sudo systemctl disable earlyoom
