@@ -10,10 +10,10 @@ setup: setup-apt setup-pip
 	ansible-galaxy collection install ansible.posix
 
 run: setup
-	ansible-playbook playbook.yml
+	ANSIBLE_CONFIG=ansible.cfg ansible-playbook playbook.yml
 
 check: setup
-	ansible-playbook playbook.yml --check
+	ANSIBLE_CONFIG=ansible.cfg ansible-playbook playbook.yml --check
 
 status:
 	zramctl 2>&1; echo "exit: $$?"

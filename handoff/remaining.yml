@@ -77,6 +77,24 @@ items:
       update-baseline.py replaces shell echo YAML generation in
       kernel-bump.yml. Reads stdin YAML dict, merges into existing
       baseline, rejects unknown keys.
+  - task: "fix: earlyoom_s_flag_bug"
+    status: completed
+    description: >-
+      -s expects percent 0-100, formula computed 775987 KiB.
+      Changed to -S (absolute KiB). earlyoom now running.
+  - task: "fix: zram_algorithm_variable_mismatch"
+    status: completed
+    description: >-
+      Template wrote ALGORITHM=zstd but zramswap script
+      reads ALGO. Variable never matched → default lz4.
+      Added device reset task for algorithm change on restart.
+  - task: "fix: ansible_warnings_suppressed"
+    status: completed
+    description: >-
+      Upgraded ansible.posix to 2.2.1 system-wide (killed
+      to_native deprecation). Added interpreter_python =
+      auto_silent to ansible.cfg. Inventory warning requires
+      -i flag via pkexec.
   - task: structure_verify_validate_on_all_targets
     status: pending
     description: >-
