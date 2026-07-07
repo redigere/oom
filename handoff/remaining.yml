@@ -86,13 +86,33 @@ items:
   - task: thermal_throttling_protection
     status: completed
     description: >-
-      Thermal throttling role implemented: sets
-      energy_performance_preference=balance_performance via sysfs
-      + tmpfiles.d persistence. Deploys thermal-monitor.sh with
-      systemd timer at 2-minute interval. Detects CPU temp from
-      /sys/class/thermal/thermal_zone*/temp. At >= 80C reduces
-      CARGO_BUILD_JOBS, MAKEFLAGS, NINJAJOBS to
-      floor(safe_core_limit/2). Restores full parallelism when
-      temperature drops below threshold. Works on all three
-      families — no external dependencies beyond sysfs and
-      systemd, which are kernel/universe.
+      Thermal throttling role implemented. governor.yml sets
+      energy_performance_preference from config.json data,
+      persisted via tmpfiles.d. monitor.yml writes all tunable
+      parameters to /etc/thermal-throttling/config.json as
+      pure data (threshold, parallelism, sysfs paths, output
+      paths). Python script thermal-monitor.py reads config,
+      monitors /sys/class/thermal/thermal_zone*/temp, and
+      writes /etc/profile.d/dev-limits.sh with reduced or
+      full build parallelism via systemd timer every 2 min.
+      Zero shell, zero hardcoded values in code.
+  - task: cross_family_thermal_validation
+    status: pending
+    description: >-
+      Run ansible-playbook --syntax-check and --check mode
+      on Debian, Fedora, Archlinux CI containers with the
+      thermal_throttling role enabled. Verify that
+      thermal-monitor.py starts cleanly on systems without
+      thermal zones (containers, VMs) and gracefully skips
+      when /sys/class/thermal is absent. Also verify
+      governor.yml stat-check skips correctly on systems
+      without energy_performance_preference sysfs.
+  - task: temperature_threshold_as_variable
+    status: pending
+    description: >-
+      Expose thermal_throttling_temperature_threshold as
+      an overridable playbook variable (currently set via
+      set_fact with default 80000). Allow users to set
+      per-machine threshold via inventory or group_vars
+      without modifying role code, following the
+      system_discovery fact pattern.

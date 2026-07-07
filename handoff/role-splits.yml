@@ -37,8 +37,10 @@ roles:
     main_imports: 2
     status: implemented
     description: >-
-      Sets energy_performance_preference to balance_performance
-      via sysfs, persists via tmpfiles.d. Runs thermal monitor
-      systemd timer every 2 minutes, reduces build parallelism
-      when CPU temp >= 80C, restores when cool.
+      Sets energy_performance_preference via sysfs from
+      /etc/thermal-throttling/config.json, persisted via
+      tmpfiles.d. Runs thermal-monitor.py systemd timer
+      every 2 minutes. Reduces build parallelism when
+      CPU temp >= threshold, restores when cool. All
+      tunable parameters in JSON config file only.
 total_subfiles: 17
