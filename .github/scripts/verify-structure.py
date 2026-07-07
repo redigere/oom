@@ -116,6 +116,50 @@ else:
             if t not in defined_targets:
                 fail("phony_norecipe", t)
 
+TYPE_CHECKERS = {
+    str: lambda v: isinstance(v, str),
+    bool: lambda v: isinstance(v, bool),
+    int: lambda v: isinstance(v, int),
+    list: lambda v: isinstance(v, list),
+    dict: lambda v: isinstance(v, dict),
+}
+
+TYPE_NAMES = {
+    str: "str",
+    bool: "bool",
+    int: "int",
+    list: "list",
+    dict: "dict",
+}
+
+
+def validate_schema(data, schema, path=""):
+    for key in schema.get("required", []):
+        if key not in data:
+            fail(f"schema_{path}{key}: missing required key")
+    for key, props in schema.get("properties", {}).items():
+        if key not in data:
+            continue
+        val = data[key]
+        expected = props.get("type")
+        if expected:
+            checker = TYPE_CHECKERS.get(expected)
+            if checker and not checker(val):
+                fail(f"schema_{path}{key}: expected {TYPE_NAMES.get(expected, expected)}, got {type(val).__name__}")
+        if expected == dict and isinstance(val, dict):
+            nested = {k: v for k, v in props.items() if k in ("required", "properties")}
+            if nested:
+                validate_schema(val, nested, f"{path}{key}.")
+        if expected == list and isinstance(val, list):
+            item_schema = props.get("items")
+            if item_schema:
+                for idx, item in enumerate(val):
+                    if isinstance(item, dict):
+                        validate_schema(item, item_schema, f"{path}{key}[{idx}].")
+
+
+SCHEMAS = "handoff/_schemas"
+
 for hfile in handoff_basenames:
     fpath = os.path.join("handoff", hfile)
     if not os.path.isfile(fpath):
@@ -136,6 +180,16 @@ for hfile in handoff_basenames:
         continue
     if not data:
         fail(f"handoff_{hfile}_empty_dict")
+    schema_path = os.path.join(SCHEMAS, hfile)
+    if os.path.isfile(schema_path):
+        with open(schema_path) as sf:
+            try:
+                schema = yaml.safe_load(sf)
+            except Exception:
+                fail(f"handoff_{hfile}_invalid_schema")
+                continue
+        if schema and isinstance(schema, dict):
+            validate_schema(data, schema)
 
 if os.path.isfile("HANDOFF.md"):
     fail("handoff_md_exists")
