@@ -17,14 +17,12 @@ profile_path = config["profile_d_path"]
 
 hot = False
 for zone_path in glob.glob(zone_glob):
-    try:
-        with open(zone_path) as zf:
-            raw = zf.read().strip()
-            if raw and int(raw) >= threshold:
-                hot = True
-                break
-    except (ValueError, OSError):
-        pass
+    with open(zone_path) as zf:
+        raw = zf.read().strip()
+        if raw and int(raw) >= threshold:
+            hot = True
+            break
+
 
 is_throttled = False
 if os.path.isfile(profile_path):
