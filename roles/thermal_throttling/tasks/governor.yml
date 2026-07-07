@@ -1,0 +1,28 @@
+---
+- name: Determine Energy Performance Preference Sysfs Path Existence
+  ansible.builtin.stat:
+    path: /sys/devices/system/cpu/cpu0/power/energy_performance_preference
+  register: thermal_throttling_epp_state
+
+- name: Read Current Energy Performance Preference Values
+  ansible.builtin.command: cat /sys/devices/system/cpu/cpu0/power/energy_performance_preference
+  register: thermal_throttling_epp_current
+  when: thermal_throttling_epp_state.stat.exists
+  changed_when: false
+
+- name: Set Energy Performance Preference to Balance-Performance Mode
+  ansible.builtin.shell: |
+    for c in /sys/devices/system/cpu/cpu*/power/energy_performance_preference; do
+      echo balance_performance > "$c"
+    done
+  when:
+    - thermal_throttling_epp_state.stat.exists
+    - thermal_throttling_epp_current.stdout | trim != 'balance_performance'
+  changed_when: true
+
+- name: Persist Energy Performance Preference Across Reboots via Systemd Tmpfiles
+  ansible.builtin.copy:
+    dest: /etc/tmpfiles.d/energy_performance_preference.conf
+    content: "w /sys/devices/system/cpu/cpu0/power/energy_performance_preference - - - - balance_performance"
+    mode: '0644'
+  when: thermal_throttling_epp_state.stat.exists
