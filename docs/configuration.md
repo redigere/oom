@@ -4,11 +4,13 @@ This document explains why every parameter in the OOM eradication playbook
 is set to its specific value, what problem the value solves, and why the
 project's choices differ from kernel defaults.
 
-## vm.swappiness = 100
+## vm.swappiness = 10
 
-**Why not the default (60):** Default swappiness balances page cache eviction and swapping. On disk swap this is sensible — swap is slow, so you tolerate cache drops to avoid it. zRAM inverts the cost model: swapping to zRAM is fast (compression in RAM), while page cache drops force disk reads on rebuilds. Setting swappiness to 100 tells the kernel "swap anonymous pages aggressively before dropping page cache." This is correct when zRAM is large enough to hold the working set, because the most expensive operation in a build is re-reading source files and shared libraries from disk.
+**Why not the default (60):** Default swappiness treats page cache eviction and anonymous page swapping as roughly equal cost. On a desktop with zRAM, this is wrong: anonymous page swapping carries a real CPU cost (zstd compression on swapout, decompression on swapin), while page cache eviction is free (just drop the page, no I/O unless dirty). Page cache can be transparently re-read from disk on access; zRAM decompression blocks the faulting thread with CPU-bound work. Low swappiness tells the kernel "strongly prefer dropping page cache over swapping anonymous pages." This keeps application memory hot in RAM — the critical requirement for a fluid desktop.
 
-**Why not higher than 100:** The kernel clamps values above 100 to 100.
+**Why 10 instead of 1:** A value of 1 would be pure "never swap unless absolute last resort," which under extreme memory pressure causes the kernel to stall processes in direct reclaim while scanning page cache. 10 provides a slight preference for cache eviction while still allowing kswapd to swap proactively before pressure becomes critical. zRAM remains as a safety net for genuine memory oversubscription, not as a primary reclaim target.
+
+**Why not 100 (previous version):** Swappiness=100 inverts the cost model, telling the kernel to swap anonymous pages before dropping page cache. This is correct when the goal is build cache performance (re-reading files from disk is slower than decompressing from zRAM). But it is incorrect for desktop fluidity: the CPU cost of zstd compression/decompression on every swapped page causes visible stuttering when switching between applications. Anonymous pages contain editor buffers, browser tabs, terminal scrollback, and language server state — these must stay in physical RAM for instant response. File cache can be rebuilt from disk at I/O speed; application memory cannot be rebuilt from zRAM without CPU stalls.
 
 ## vm.watermark_scale_factor: universal formula clamp(⌈500 × 8192 ÷ RAM⌉, 10, 1000)
 

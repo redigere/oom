@@ -6,7 +6,7 @@ Linux's default virtual memory and OOM behavior is tuned for server workloads: m
 
 On a dev machine, an OOM kill is not a minor stall — it destroys compiler state, wipes build caches, closes file descriptors, and costs minutes of rebuild time. A single `cargo build` or `ninja` invocation can balloon to 8-16 GB of anonymous pages. When the kernel OOM killer picks a victim, it often selects the IDE or terminal rather than the compiler, because the compiler has more pages and the kernel's heuristic avoids the "guilty" process.
 
-Meanwhile, the default `vm.swappiness=60` tells the kernel to slightly prefer dropping file-backed page cache over swapping. On a workstation with abundant zRAM, this is backwards: page cache survives rebuilds and accelerates compilers; zRAM-compressed anonymous pages are cheap to swap. We want the kernel to swap *first* and keep page cache.
+Meanwhile, the default `vm.swappiness=60` treats page cache eviction and anonymous page swapping as equal cost. On a workstation with zRAM, this is wrong: anonymous page swapping is not free — every swapout compresses with zstd (CPU-bound), every swapin decompresses (CPU-bound). Page cache eviction is free (just drop the page). Application memory (editor buffers, browser tabs, language servers) must stay hot in RAM for fluid interactivity. We set swappiness aggressively low so the kernel drops page cache first and only swaps under genuine pressure.
 
 ## Why zRAM Instead of Disk Swap
 
@@ -24,9 +24,9 @@ systemd-oomd uses PSI pressure thresholds that fire too late for compiler worklo
 
 The kernel OOM killer's heuristic picks victims by oom_score, which roughly tracks memory usage. Build tools (compilers, linkers, bundlers) are the largest memory consumers on a dev machine, so the kernel tends to kill *them last*. But these are precisely the processes we *want* killed: they are stateless, restartable, and their memory can be reclaimed immediately. Desktop processes (shell, editor, DE, browser) are stateful and slow to restore. The avoid list protects UX-critical processes; the prefer list ensures memory-hungry ephemeral processes are sacrificed first.
 
-## Why vm.swappiness = 100
+## Why vm.swappiness = 10
 
-This is the most controversial setting in the project. The conventional wisdom says "don't set swappiness above 60." The conventional wisdom assumes disk swap. zRAM changes the trade-off: swapping to zRAM is ~10x faster than disk swap and does not block I/O. Setting swappiness to 100 tells the kernel "prefer swap over page cache eviction in all cases." This retains file-backed pages in memory, which directly accelerates rebuilds (same header files, same object files, same libraries mapped repeatedly).
+This is the most important setting for desktop fluidity. Conventional zRAM tuning advice says "set swappiness to 100 because zRAM is fast." This is correct for throughput but wrong for interactivity. zRAM's zstd compression is CPU-bound: every page swapout compresses, every page swapin decompresses. On a desktop with many applications open, swappiness=100 forces the kernel to frequently compress and decompress application memory, causing visible stuttering on every context switch. Setting swappiness to 10 tells the kernel "strongly prefer dropping page cache over swapping anonymous pages." This keeps application memory hot in physical RAM. Page cache is rebuilt from disk transparently; anonymous pages cannot be rebuilt from zRAM without CPU stalls. zRAM remains as a safety net for memory oversubscription, not as a primary reclaim target.
 
 ## Why vm.watermark_scale_factor = 500
 
