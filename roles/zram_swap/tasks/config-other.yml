@@ -1,5 +1,5 @@
 ---
-- name: Template ZRAM Generator Config For RedHat and Archlinux
+- name: Write ZRAM Generator Configuration
   ansible.builtin.copy:
     dest: /etc/systemd/zram-generator.conf
     content: |
@@ -11,13 +11,13 @@
   register: zram_swap_config_redhat
   when: ansible_facts['os_family'] in ['RedHat', 'Archlinux']
 
-- name: Determine ZRAM Generator Service Registration Status
+- name: Check ZRAM Generator Service Registration
   ansible.builtin.systemd:
     name: systemd-zram-setup@zram0
   register: zram_swap_generator_check
   when: ansible_facts['os_family'] in ['RedHat', 'Archlinux']
 
-- name: Restart ZRAM Generator Service and Enable Persistence (RedHat/Arch)
+- name: Restart and Enable ZRAM Generator Service (RedHat/Arch)
   ansible.builtin.systemd:
     name: systemd-zram-setup@zram0
     state: restarted

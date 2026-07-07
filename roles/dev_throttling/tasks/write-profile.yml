@@ -1,5 +1,5 @@
 ---
-- name: Deploy Development Environment Resource Limit Profile
+- name: Write Node.js Heap Limit to /etc/profile.d
   ansible.builtin.copy:
     dest: /etc/profile.d/node_heap_limit.sh
     content: |

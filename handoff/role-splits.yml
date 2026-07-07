@@ -9,8 +9,10 @@ roles:
     subfiles:
       - mglru.yml
       - sysctl.yml
+      - thp.yml
+      - cgroup-memory.yml
       - psi.yml
-    main_imports: 3
+    main_imports: 5
   - name: zram_swap
     subfiles:
       - swapoff.yml
@@ -43,4 +45,4 @@ roles:
       every 2 minutes. Reduces build parallelism when
       CPU temp >= threshold, restores when cool. All
       tunable parameters in JSON config file only.
-total_subfiles: 17
+total_subfiles: 19

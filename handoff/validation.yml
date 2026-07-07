@@ -5,7 +5,7 @@ ansible_lint_result: pass
 ansible_playbook_syntax: pass
 validate_formulas:
   status: pass
-  formula_count: 4
+  formula_count: 5
   zero_division_guard: true
   constants_extracted: true
   reference_points_computed: true

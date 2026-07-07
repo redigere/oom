@@ -1,5 +1,5 @@
 ---
-name: kernel-bump
+name: oom-kernel-baseline-bump
 
 on:
   schedule:

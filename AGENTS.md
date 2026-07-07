@@ -1,5 +1,10 @@
 # AGENTS Context for AI Assistants — Why
 
+## Commit Convention
+
+Every commit MUST have exactly one subject line followed by a signed-off-by trailer.
+No body, no multi-line messages. See DEV.md for format details.
+
 ## Why This Project Targets Debian, RedHat, and Archlinux
 
 These three families cover ~95% of Linux developer workstations. Debian/Ubuntu for servers and laptops, Fedora/RHEL for enterprise workstations, Archlinux for enthusiasts. Each has different package names, service managers, and config paths for zRAM and OOM daemons. Supporting all three means the playbook runs unmodified on the vast majority of development machines.
@@ -10,16 +15,26 @@ The tuning modifies kernel parameters, swap devices, and system services that ar
 
 ## Why Roles Are Ordered and Coupled
 
-system_discovery computes 4 continuous-inverse facts based on RAM and vCPU count, consumed by 3 downstream roles:
+system_discovery computes all tuning parameters from RAM and vCPU count — no hardcoded defaults. Consumed by 4 downstream roles:
 
 | Fact | Formula | Consumed By | Rationale |
 |------|---------|-------------|-----------|
 | `system_discovery_target_zram_mb` | `max(2048, min(RAM_MB, 16384))` | zram_swap, dev_throttling | RAM-proportional zRAM with floor/cap |
-| `system_discovery_safe_core_limit` | `max(1, vCPU − ceil(vCPU÷8))` | dev_throttling | Reserves ~1 core per 8 for desktop |
+| `system_discovery_safe_core_limit` | `max(1, vCPU − ceil(vCPU÷8))` | dev_throttling, thermal_throttling | Reserves ~1 core per 8 for desktop |
 | `system_discovery_watermark_scale_factor` | `clamp(⌈500×8192÷RAM_MB⌉, 10, 1000)` | kernel_tuning | Keeps absolute reclaim zone ~constant |
 | `system_discovery_earlyoom_min_free_pct` | `clamp(⌈40000÷RAM_MB⌉, 3, 10)` | oom_handler | Targets ~400MB absolute OOM trigger |
+| `system_discovery_dirty_ratio` | `5` | kernel_tuning | Fixed percentage — caps writeback burst |
+| `system_discovery_dirty_background_ratio` | `2` | kernel_tuning | Fixed percentage — starts early flusher |
+| `system_discovery_min_free_kbytes` | `max(65536, RAM_MB×1024÷1000)` | kernel_tuning | Guarantees atomic allocation headroom |
+| `system_discovery_admin_reserve_kbytes` | `max(4096, RAM_MB×1024÷4000)` | kernel_tuning | Root recovery headroom proportional to RAM |
+| `system_discovery_user_reserve_kbytes` | `max(16384, RAM_MB×1024÷2000)` | kernel_tuning | User signal delivery headroom proportional to RAM |
+| `system_discovery_compaction_proactiveness` | `clamp(20+60×4096÷RAM_MB, 20, 80)` | kernel_tuning | Inverse-RAM — small machines compact more |
+| `system_discovery_page_lock_unfairness` | `1` | kernel_tuning | Minimum — fair reclaim under pressure |
+| `system_discovery_zone_reclaim_mode` | `0` | kernel_tuning | Desktop — no NUMA zone preference |
+| `system_discovery_reap_mem_on_sigkill` | `1` | kernel_tuning | Immediate memory reclaim on kill |
+| `system_discovery_oom_dump_tasks` | `0` | kernel_tuning | Suppresses OOM dump for faster recovery |
 
-All four use continuous functions — no discrete thresholds, no hardcoded branches. This ensures `|X-Y|` (difference between ideal config and applied config) is minimized across every machine from 2 GB to 128 GB. The ordering is enforced by `playbook.yml`, not by `meta/main.yml`, because Ansible's dependency resolver evaluates meta dependencies at parse time, before runtime facts are available.
+All use continuous functions — no discrete thresholds, no hardcoded branches. This ensures `|X-Y|` (difference between ideal config and applied config) is minimized across every machine from 2 GB to 128 GB. The ordering is enforced by `playbook.yml`, not by `meta/main.yml`, because Ansible's dependency resolver evaluates meta dependencies at parse time, before runtime facts are available.
 
 ## Why No `|| true` or `|| echo` in Makefile Targets
 

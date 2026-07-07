@@ -1,11 +1,11 @@
 ---
-name: container-test
+name: oom-playbook-container-test
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
-    branches: [main]
+    branches: [master]
 
 jobs:
   debian:
@@ -20,9 +20,9 @@ jobs:
         run: ansible-galaxy collection install ansible.posix
       - name: Validate thermal-monitor.py syntax
         run: python3 -m py_compile roles/thermal_throttling/files/thermal-monitor.py
-      - name: Syntax check
+      - name: Validate OOM playbook syntax
         run: ansible-playbook playbook.yml --syntax-check
-      - name: Dry-run check mode
+      - name: Dry-run OOM playbook check mode
         run: 'ansible-playbook playbook.yml --check; echo "exit: $?"'
 
   fedora:
@@ -38,9 +38,9 @@ jobs:
         run: ansible-galaxy collection install ansible.posix
       - name: Validate thermal-monitor.py syntax
         run: python3 -m py_compile roles/thermal_throttling/files/thermal-monitor.py
-      - name: Syntax check
+      - name: Validate OOM playbook syntax
         run: ansible-playbook playbook.yml --syntax-check
-      - name: Dry-run check mode
+      - name: Dry-run OOM playbook check mode
         run: 'ansible-playbook playbook.yml --check; echo "exit: $?"'
 
   archlinux:
@@ -56,7 +56,7 @@ jobs:
         run: ansible-galaxy collection install ansible.posix
       - name: Validate thermal-monitor.py syntax
         run: python3 -m py_compile roles/thermal_throttling/files/thermal-monitor.py
-      - name: Syntax check
+      - name: Validate OOM playbook syntax
         run: ansible-playbook playbook.yml --syntax-check
-      - name: Dry-run check mode
+      - name: Dry-run OOM playbook check mode
         run: 'ansible-playbook playbook.yml --check; echo "exit: $?"'

@@ -1,5 +1,9 @@
 # Usage — Why
 
+This playbook configures Linux kernel parameters, zRAM compressed swap, earlyoom,
+and build job limits to prevent system freezes and OOM kills on developer
+workstations. This document explains how to use it safely.
+
 ## Why `make check` Before `make run`
 
 `ansible-playbook --check` performs a dry-run: Ansible connects to localhost, gathers facts, evaluates all `when` conditions, and reports what would change — without making any changes. This is critical because the playbook:

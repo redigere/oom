@@ -1,9 +1,9 @@
 ---
-- name: Swap Off Disk Devices
+- name: Disable Disk Swap to Prevent Slow Swap-Read Latency
   ansible.builtin.import_tasks: swapoff.yml
-- name: Install ZRAM Package
+- name: Install OS-Specific ZRAM Package
   ansible.builtin.import_tasks: install.yml
-- name: Configure ZRAM for Debian
+- name: Configure ZRAM Compressed Swap (Debian)
   ansible.builtin.import_tasks: config-debian.yml
-- name: Configure ZRAM for RedHat/Arch
+- name: Configure ZRAM Compressed Swap (RedHat/Arch)
   ansible.builtin.import_tasks: config-other.yml

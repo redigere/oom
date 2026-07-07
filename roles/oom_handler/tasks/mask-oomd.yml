@@ -1,5 +1,5 @@
 ---
-- name: Identify Systemd-Oomd Unit File Location on Disk
+- name: Locate systemd-oomd Unit Files on Disk
   ansible.builtin.find:
     paths:
       - /etc/systemd/system

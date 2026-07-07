@@ -1,0 +1,30 @@
+---
+- name: Check Cgroup Memory Controller Availability
+  ansible.builtin.stat:
+    path: /sys/fs/cgroup/user.slice/memory.max
+  register: kernel_tuning_cgroup_memory_state
+
+- name: Create Systemd Drop-In Directory for User Slice
+  ansible.builtin.file:
+    path: /etc/systemd/system/user.slice.d
+    state: directory
+    mode: '0755'
+  when: kernel_tuning_cgroup_memory_state.stat.exists
+
+- name: Write Memory Limit Drop-In for User Slice
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/user.slice.d/90-memory-limit.conf
+    content: |
+      [Slice]
+      MemoryMax=90%
+      TasksMax=infinity
+    mode: '0644'
+  register: kernel_tuning_user_slice_config
+  when: kernel_tuning_cgroup_memory_state.stat.exists
+
+- name: Reload Systemd Daemon for User Slice Changes
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when:
+    - kernel_tuning_cgroup_memory_state.stat.exists
+    - kernel_tuning_user_slice_config.changed

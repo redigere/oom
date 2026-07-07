@@ -1,6 +1,10 @@
 # Architecture — Why
 
-## Why Five Roles In This Order
+This document explains why the OOM eradication playbook is structured into
+six ordered roles, how they depend on each other, and how the continuous-formula
+approach minimizes configuration error across all hardware sizes.
+
+## Why Six Roles In This Order
 
 Each role depends on data or state established by the preceding role. The sequence is not arbitrary.
 

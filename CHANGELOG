@@ -1,5 +1,8 @@
 CHANGELOG
 
+# OOM Workstation Tuning — prevents system freeze and out-of-memory kills
+# on Linux developer workstations. See README.md for full documentation.
+
 v0.1.0
 
 Established 5-role Ansible structure targeting Debian, RedHat, and Archlinux.

@@ -1,5 +1,9 @@
 # Configuration Rationale — Why Each Value
 
+This document explains why every parameter in the OOM eradication playbook
+is set to its specific value, what problem the value solves, and why the
+project's choices differ from kernel defaults.
+
 ## vm.swappiness = 100
 
 **Why not the default (60):** Default swappiness balances page cache eviction and swapping. On disk swap this is sensible — swap is slow, so you tolerate cache drops to avoid it. zRAM inverts the cost model: swapping to zRAM is fast (compression in RAM), while page cache drops force disk reads on rebuilds. Setting swappiness to 100 tells the kernel "swap anonymous pages aggressively before dropping page cache." This is correct when zRAM is large enough to hold the working set, because the most expensive operation in a build is re-reading source files and shared libraries from disk.
@@ -26,6 +30,49 @@
 **Why not the default (100):** At 100, the kernel reclaims VFS caches (dentries, inodes) at the same rate as page cache. A C++ or Rust build opens the same headers hundreds of times. Each evicted dentry forces a directory lookup and inode load from disk on the next stat(). At 50, the reclaim rate is halved: VFS objects live longer across build invocations. The memory cost is small because dentries are compact (~200 bytes each); even a million dentries consumes ~200 MB, which zRAM easily absorbs.
 
 **Why not 0:** At 0, the kernel never reclaims VFS caches, which can lead to unbounded memory growth on long-running machines. 50 is "prefer to keep them but still reclaim under pressure."
+
+## vm.dirty_ratio, vm.dirty_background_ratio = 5, 2
+
+**Why not the default (20/10):** When dirty page count reaches dirty_ratio, every write() syscall blocks until pages are flushed to storage. On a 32 GB machine with default 20%, 6.4 GB of dirty pages accumulate before writes block — causing a multi-second system-wide freeze as the storage stack drains the entire backlog. Lowering to 5%/2% caps the writeback burst at 1.6 GB on the same machine. The cost is more frequent background flushes, which are invisible on SSD.
+
+**Why these values:** 5% is high enough that bursty compilers never block. 2% ensures the background flusher starts early. These are fixed percentages — no hardware scaling needed because the absolute cap scales linearly with RAM.
+
+## vm.min_free_kbytes = max(64 MB, 0.1% of RAM)
+
+**Why not the default (auto-calculated):** The kernel computes min_free_kbytes as a fraction of lowmem (~0.04%). This is tuned for servers that prefer to use all memory before reclaiming. On a desktop with bursty allocators, this leaves no runway for urgent allocations. The project's formula guarantees at least 64 MB floor, then 0.1% of total RAM above that. On a 2 GB machine: 64 MB (floor). On a 128 GB machine: ~131 MB. This scales with RAM but never drops below a safe minimum.
+
+## vm.admin_reserve_kbytes = max(4 MB, 0.025% of RAM)
+## vm.user_reserve_kbytes = max(16 MB, 0.05% of RAM)
+
+**Why not the default (auto-calculated):** The kernel reserves 3% of lowmem for admin and 1.67% for user by default. On a 128 GB machine this wastes ~4 GB for admin. On a 2 GB machine it reserves ~60 MB — insufficient under pressure. The project's formulas scale reserves proportionally to RAM with floors that guarantee recovery headroom on every machine.
+
+## vm.compaction_proactiveness = clamp(20 + 60 × 4096 ÷ RAM, 20, 80)
+
+**Why not the default (20):** Memory compaction defragments physical memory to satisfy huge page allocations. At default 20, the kernel compacts lazily — reactive rather than proactive. When a large allocation arrives and no contiguous pages exist, the allocating thread stalls for compaction. This is the primary cause of "jank" on desktops under memory pressure.
+
+**Why inverse-RAM formula:** Smaller machines fragment faster because their smaller page pools are exhausted and recycled more frequently. The formula sets compaction aggressiveness inversely to RAM: on 2 GB: 80 (aggressive), on 8 GB: 50 (moderate), on 32 GB: 28 (gentle), on 128 GB: 22 (minimal). This ensures small machines compact proactively to avoid stalls, while large machines save CPU time because they have enough headroom to absorb fragmentation naturally.
+
+## vm.page_lock_unfairness = 1
+
+**Why not the default (5):** When the kernel reclaims pages under memory pressure, it skips recently-locked pages up to `page_lock_unfairness` times before picking a different victim. Default 5 means a heavily contended page can be skipped 5 times, pushing reclaim work onto other tasks and causing uneven latency. The project sets 1 — the minimum — making reclaim fairer and distributing pressure evenly across all processes. This value does not scale with hardware: fairness is equally important on all machine sizes.
+
+## vm.zone_reclaim_mode = 0
+
+**Why not the default (0):** Already the default, but set explicitly because some NUMA tuning guides recommend 1 (prefer local zone). On a desktop, zone reclaim causes unnecessary page migration and latency spikes when the kernel tries to keep allocations local at all costs. 0 allows the kernel to allocate from any zone. This is a policy choice, not a hardware-dependent value.
+
+## vm.reap_mem_on_sigkill = 1
+
+**Why not the default (0):** When the kernel delivers SIGKILL, it normally does not reclaim the victim's memory immediately — the memory remains allocated until the next scan. Under extreme memory pressure, this means a killed process's memory stays in use for hundreds of milliseconds, during which the system remains frozen. The project sets 1, telling the kernel to reclaim the victim's memory synchronously on SIGKILL. This is a fixed policy: immediate reclaim is always beneficial regardless of machine size.
+
+## vm.oom_dump_tasks = 0
+
+**Why not the default (1):** When the kernel OOM killer activates, it prints /proc/pid/status for every process in the system to the kernel log. On a machine with thousands of processes, this dump takes seconds while the system is already frozen. The project suppresses the dump entirely, allowing the OOM killer to select a victim and reclaim memory immediately. This is always correct — OOM diagnostics are useless if the system is frozen.
+
+## THP Defrag = madvise
+
+**Why not the default (always):** The kernel's transparent hugepage defragmenter runs compaction when 2 MB hugepage allocations fail. In "always" mode, compaction runs for any hugepage allocation, including those that are not performance-critical. Compaction is a blocking operation: it scans and migrates pages in a loop, and the allocating thread stalls until a contiguous region is found. Setting to "madvise" tells the compaction thread to run only for pages explicitly requested via MADV_HUGEPAGE. This eliminates unpredictable latency spikes from background compaction — the most common source of "jank" on Linux desktops under memory pressure.
+
+**Why not never:** Some workloads (database, JVM, V8) benefit from hugepages for TLB performance. "madvise" allows them to opt in via mmap flags while keeping all other allocations safe from compaction stalls.
 
 ## MGLRU = 7 (bitmask: 1|2|4)
 
@@ -102,6 +149,16 @@
 **Why prefer cc1plus, rustc, cargo, node, java, webpack, esbuild, npm, make, ninja, cmake, docker, containerd:** These are compilers, build tools, bundlers, and container runtimes — the primary memory consumers on a dev machine. They are stateless from the user's perspective: killed process exits, next build restarts it. Preferring them ensures the kernel OOM killer (called when earlyoom SIGTERM fails) does not pick a desktop process instead.
 
 **Why the ^|/ and $ anchors:** The regex `(^|/)cc1plus$` matches `/usr/lib/gcc/.../cc1plus` but not a process named `cc1plus-background` or `my-cc1plus-tool`. The anchors prevent partial matches from accidentally protecting or sacrificing unintended processes.
+
+## User Slice Memory Limit: MemoryMax=90%
+
+**Why not unlimited (systemd default):** Without a cgroupv2 memory limit on user.slice, a single user session can consume all physical RAM plus all zRAM swap. When every page is exhausted, the kernel has no headroom to run the OOM killer, flush dirty pages, or deliver signals — the system enters an unbounded livelock where all processes are in D state (uninterruptible sleep waiting for memory). This is the "desktop freeze" that persists until the hardware watchdog resets the machine.
+
+**Why 90% instead of 100%:** Reserving 10% of physical RAM guarantees that the kernel, systemd, and earlyoom always have allocatable memory even when the user session exceeds its limit. The 10% reserved pool is used for: OOM killer page reclaim, SIGTERM/SIGKILL signal delivery, page table allocation for the killing path, dirty page writeback threads, and systemd emergency services. On a 32 GB machine, 3.2 GB of reserved memory is more than enough for recovery; on a 2 GB machine, 200 MB still suffices.
+
+**Why not lower than 90%:** If the limit is too strict (e.g., 50%), the user session hits the cgroup OOM killer during normal workloads, killing the IDE or browser. 90% is the safety net for runaway processes, not an active limit during normal operation.
+
+**Why TasksMax=infinity:** The default TasksMax for user.slice is 33% of pids_max (roughly 10,000 on most systems). A power user running many apps (browser with hundreds of tabs, IDE, language servers, containers) can exhaust this limit, preventing fork() and exec() system calls — causing apparent freezes because no new process can start. Removing the limit ensures the user can always spawn new processes.
 
 ## CARGO_BUILD_JOBS, MAKEFLAGS, NINJAJOBS = safe_core_limit
 

@@ -1,5 +1,5 @@
 ---
-- name: Determine Multi-Gen LRU Runtime Kernel Path Existence
+- name: Check Kernel Support for Multi-Gen LRU Feature
   ansible.builtin.stat:
     path: /sys/kernel/mm/lru_gen/enabled
   register: kernel_tuning_mglru_state
@@ -10,14 +10,14 @@
   when: kernel_tuning_mglru_state.stat.exists
   changed_when: false
 
-- name: Force Enable Multi-Gen LRU Functionality
+- name: Activate Multi-Gen LRU
   ansible.builtin.shell: echo 7 > /sys/kernel/mm/lru_gen/enabled
   when:
     - kernel_tuning_mglru_state.stat.exists
     - kernel_tuning_mglru_current.stdout | trim != '7'
   changed_when: true
 
-- name: Persist Multi-Gen LRU State Across Reboots via Systemd Tmpfiles
+- name: Persist MGLRU Configuration Across Reboots
   ansible.builtin.copy:
     dest: /etc/tmpfiles.d/mglru.conf
     content: "w /sys/kernel/mm/lru_gen/enabled - - - - 7"

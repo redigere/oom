@@ -1,5 +1,5 @@
 ---
-- name: Assert OS Compatibility
+- name: Assert OS Is Supported by OOM Tuning Framework
   ansible.builtin.import_tasks: assert-os.yml
-- name: Compute System Tuning Facts
+- name: Compute Hardware-Tuned System Parameters for OOM Prevention
   ansible.builtin.import_tasks: compute-facts.yml

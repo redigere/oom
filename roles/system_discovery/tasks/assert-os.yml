@@ -1,5 +1,5 @@
 ---
-- name: Assert Target OS Family Compatibility
+- name: Assert Target OS Is Supported by OOM Eradication Playbook
   ansible.builtin.assert:
     that:
       - ansible_facts['os_family'] in ['Debian', 'RedHat', 'Archlinux']

@@ -1,19 +1,19 @@
 ---
 workflows:
-  - name: lint
+  - name: oom-playbook-lint
     jobs:
       - yamllint_strict
       - ansible_lint_production
-  - name: syntax
+  - name: oom-playbook-syntax
     jobs:
       - ansible_playbook_syntax_check
-  - name: validate-formulas
+  - name: validate-oom-formulas
     jobs:
       - python_formula_validation
-  - name: structure-verify
+  - name: oom-playbook-structure-verify
     jobs:
       - python_convention_verification
-  - name: kernel-bump
+  - name: oom-kernel-baseline-bump
     trigger: weekly_schedule
     jobs:
       - kernel_version_detection
@@ -21,7 +21,7 @@ workflows:
       - formula_validation
       - structure_verification
       - baseline_commit
-  - name: container-test
+  - name: oom-playbook-container-test
     jobs:
       - debian_syntax_check
       - fedora_syntax_check

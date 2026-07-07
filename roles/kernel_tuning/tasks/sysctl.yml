@@ -1,5 +1,5 @@
 ---
-- name: Apply High Responsiveness Virtual Memory Engine Parameters
+- name: Apply OOM Prevention Kernel Parameters
   ansible.posix.sysctl:
     name: "{{ item.key }}"
     value: "{{ item.value }}"
@@ -10,3 +10,13 @@
     - {key: 'vm.swappiness', value: '100'}
     - {key: 'vm.watermark_scale_factor', value: '{{ system_discovery_watermark_scale_factor }}'}
     - {key: 'vm.vfs_cache_pressure', value: '50'}
+    - {key: 'vm.dirty_ratio', value: '{{ system_discovery_dirty_ratio }}'}
+    - {key: 'vm.dirty_background_ratio', value: '{{ system_discovery_dirty_background_ratio }}'}
+    - {key: 'vm.min_free_kbytes', value: '{{ system_discovery_min_free_kbytes }}'}
+    - {key: 'vm.admin_reserve_kbytes', value: '{{ system_discovery_admin_reserve_kbytes }}'}
+    - {key: 'vm.user_reserve_kbytes', value: '{{ system_discovery_user_reserve_kbytes }}'}
+    - {key: 'vm.compaction_proactiveness', value: '{{ system_discovery_compaction_proactiveness }}'}
+    - {key: 'vm.page_lock_unfairness', value: '{{ system_discovery_page_lock_unfairness }}'}
+    - {key: 'vm.zone_reclaim_mode', value: '{{ system_discovery_zone_reclaim_mode }}'}
+    - {key: 'vm.reap_mem_on_sigkill', value: '{{ system_discovery_reap_mem_on_sigkill }}'}
+    - {key: 'vm.oom_dump_tasks', value: '{{ system_discovery_oom_dump_tasks }}'}

@@ -2,6 +2,7 @@
 import json
 import os
 import glob
+import sys
 
 CONFIG_PATH = "/etc/thermal-throttling/config.json"
 THROTTLED_MARKER = "THERMAL_THROTTLING_ACTIVE=1"
@@ -17,12 +18,18 @@ profile_path = config["profile_d_path"]
 
 hot = False
 for zone_path in glob.glob(zone_glob):
-    with open(zone_path) as zf:
-        raw = zf.read().strip()
+    try:
+        with open(zone_path) as zf:
+            raw = zf.read().strip()
+    except OSError as e:
+        sys.stderr.write(f"thermal_monitor: {zone_path}: {e}\n")
+        continue
+    try:
         if raw and int(raw) >= threshold:
             hot = True
             break
-
+    except ValueError:
+        sys.stderr.write(f"thermal_monitor: {zone_path}: non-numeric temp: {raw}\n")
 
 is_throttled = False
 if os.path.isfile(profile_path):

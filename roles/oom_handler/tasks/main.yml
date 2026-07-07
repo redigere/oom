@@ -1,9 +1,9 @@
 ---
-- name: Mask systemd-oomd
+- name: Mask systemd-oomd to Prevent Conflicting OOM Policy
   ansible.builtin.import_tasks: mask-oomd.yml
-- name: Install earlyoom
+- name: Install EarlyOOM for Proactive OOM Prevention
   ansible.builtin.import_tasks: install.yml
-- name: Configure OOM Policy
+- name: Set EarlyOOM Kill Thresholds Scaled to Hardware
   ansible.builtin.import_tasks: config.yml
-- name: Manage OOM Service
+- name: Start and Enable EarlyOOM Daemon
   ansible.builtin.import_tasks: service.yml

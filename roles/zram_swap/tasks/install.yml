@@ -1,5 +1,5 @@
 ---
-- name: Install Target Distribution Native Compressed Volatile Resource Drivers
+- name: Install ZRAM Package for Target OS Family
   ansible.builtin.package:
     name: >-
       {{ (ansible_facts['os_family'] == 'Debian')

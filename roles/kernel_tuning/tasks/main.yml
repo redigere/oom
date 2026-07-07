@@ -1,7 +1,11 @@
 ---
-- name: Configure Multi-Gen LRU
+- name: Enable Multi-Gen LRU to Reduce Memory Scanning Jank
   ansible.builtin.import_tasks: mglru.yml
-- name: Apply Sysctl Parameters
+- name: Tune VM Sysctl for Responsive Desktop Under Memory Pressure
   ansible.builtin.import_tasks: sysctl.yml
-- name: Configure PSI
+- name: Configure Transparent HugePages Defrag to Prevent Compaction Freezes
+  ansible.builtin.import_tasks: thp.yml
+- name: Set User Slice Memory Limit via Cgroup to Prevent Runaway Allocation
+  ansible.builtin.import_tasks: cgroup-memory.yml
+- name: Enable Pressure Stall Information for EarlyOOM Accuracy
   ansible.builtin.import_tasks: psi.yml

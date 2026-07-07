@@ -1,3 +1,5 @@
+# OOM Workstation Tuning — prevents system freeze and out-of-memory kills
+# on Linux developer workstations. See README.md for full documentation.
 .PHONY: setup setup-apt setup-pip run check status handoff clean
 
 setup-apt:

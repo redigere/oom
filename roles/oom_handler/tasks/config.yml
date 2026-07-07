@@ -7,7 +7,7 @@
     state: present
     reload: true
 
-- name: Override EarlyOOM Service Unit Parameterization
+- name: Write EarlyOOM Config With Hardware-Scaled Memory and Swap Thresholds
   ansible.builtin.copy:
     dest: /etc/default/earlyoom
     content: >-

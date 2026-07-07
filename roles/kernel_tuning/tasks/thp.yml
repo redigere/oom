@@ -1,0 +1,25 @@
+---
+- name: Check Transparent HugePages Defrag Sysfs Path Existence
+  ansible.builtin.stat:
+    path: /sys/kernel/mm/transparent_hugepage/defrag
+  register: kernel_tuning_thp_defrag_state
+
+- name: Read Current THP Defrag Mode
+  ansible.builtin.command: cat /sys/kernel/mm/transparent_hugepage/defrag
+  register: kernel_tuning_thp_defrag_current
+  when: kernel_tuning_thp_defrag_state.stat.exists
+  changed_when: false
+
+- name: Set THP Defrag to madvise to Prevent Compaction Stalls
+  ansible.builtin.shell: echo madvise > /sys/kernel/mm/transparent_hugepage/defrag
+  when:
+    - kernel_tuning_thp_defrag_state.stat.exists
+    - kernel_tuning_thp_defrag_current.stdout | trim != 'madvise'
+  changed_when: true
+
+- name: Persist THP Defrag Mode Across Reboots via Systemd Tmpfiles
+  ansible.builtin.copy:
+    dest: /etc/tmpfiles.d/thp_defrag.conf
+    content: "w /sys/kernel/mm/transparent_hugepage/defrag - - - - madvise"
+    mode: '0644'
+  when: kernel_tuning_thp_defrag_state.stat.exists

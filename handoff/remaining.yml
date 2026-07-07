@@ -132,3 +132,63 @@ items:
       system_discovery_safe_core_limit (ternary > 4).
       No default() filter, no hardcoded literals, no fallbacks.
       Values always calculated from hardware facts.
+  - task: "freeze: dirty_ratio: throttle_writeback"
+    status: completed
+    description: >-
+      vm.dirty_ratio=5, vm.dirty_background_ratio=2 prevent
+      multi-second write-block freezes. No hardcoded absolute
+      values — percentages scale linearly with RAM.
+  - task: "freeze: thp_defrag: madvise"
+    status: completed
+    description: >-
+      THP defrag set to madvise to prevent compaction stalls.
+      Persisted via tmpfiles.d. Read-before-write idempotency
+      like MGLRU pattern.
+  - task: "freeze: cgroup_memory_limit: user_slice"
+    status: completed
+    description: >-
+      user.slice MemoryMax=90% guarantees kernel headroom for
+      OOM recovery. TasksMax=infinity prevents fork/exec blocks.
+      Drop-in written to /etc/systemd/system/user.slice.d/.
+  - task: "freeze: compaction_proactiveness: inverse_ram"
+    status: completed
+    description: >-
+      vm.compaction_proactiveness computed inverse to RAM.
+      Small machines compact aggressively (80), large machines
+      conserve CPU (20). Continuous formula, no thresholds.
+  - task: "freeze: min_free: headroom_reservation"
+    status: completed
+    description: >-
+      vm.min_free_kbytes, admin/user_reserve_kbytes computed
+      proportional to RAM with floors. Guarantees atomic
+      allocation headroom on all machine sizes.
+  - task: "freeze: oom_recovery: fast_kill"
+    status: completed
+    description: >-
+      vm.reap_mem_on_sigkill=1 reclaims memory synchronously
+      on SIGKILL. vm.oom_dump_tasks=0 suppresses dump of
+      thousands of processes. vm.page_lock_unfairness=1 for
+      fair reclaim. vm.zone_reclaim_mode=0 for desktop policy.
+  - task: "ci: branch_fix: master"
+    status: completed
+    description: >-
+      All workflow triggers changed from branches:[main] to
+      branches:[master] to match the repository default branch.
+  - task: "docs: DEV.md: commit_convention"
+    status: completed
+    description: >-
+      DEV.md created documenting commit convention: single-line
+      subject + Signed-off-by trailer only. AGENTS.md updated
+      with same convention.
+  - task: "handoff: update: new_features"
+    status: completed
+    description: >-
+      role-splits.yml updated with thp.yml and cgroup-memory.yml.
+      validation.yml formula_count updated. remaining.yml extended.
+      ci.yml workflow names updated for OOM prefix.
+  - task: "commit_history: rebase_cleanup"
+    status: pending
+    description: >-
+      Rebase entire history: single-line messages only, add
+      Signed-off-by to all commits, reword 'revert' messages.
+      Dangling side-chain commits dropped.

@@ -1,5 +1,5 @@
 ---
-- name: Template Configuration Layer Target For Debian Derivatives Framework
+- name: Write ZRAM Configuration
   ansible.builtin.copy:
     dest: /etc/default/zramswap
     content: |
@@ -10,13 +10,13 @@
   register: zram_swap_config_debian
   when: ansible_facts['os_family'] == 'Debian'
 
-- name: Determine ZRAM Swap Service Registration Status
+- name: Check ZRAM Swap Service Registration
   ansible.builtin.systemd:
     name: zramswap
   register: zram_swap_service_check
   when: ansible_facts['os_family'] == 'Debian'
 
-- name: Deactivate and Reset ZRAM Device Before Reconfiguration
+- name: Reset ZRAM Device Before Applying New Configuration
   ansible.builtin.shell: |
     if swapon --show=NAME --noheadings 2>/dev/null | grep -qxF /dev/zram0; then
       swapoff /dev/zram0
@@ -27,7 +27,7 @@
     - zram_swap_config_debian.changed
   changed_when: true
 
-- name: Restart ZRAM Swap Service and Enable Persistence (Debian)
+- name: Restart and Enable ZRAM Swap Service (Debian)
   ansible.builtin.systemd:
     name: zramswap
     state: restarted

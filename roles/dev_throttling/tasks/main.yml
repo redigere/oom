@@ -1,5 +1,5 @@
 ---
-- name: Compute Node Heap Limit
+- name: Compute Node.js Heap Limit to Prevent Garbage Collection Freeze
   ansible.builtin.import_tasks: compute-heap.yml
-- name: Write Profile Script
+- name: Deploy Build Job Limits to /etc/profile.d
   ansible.builtin.import_tasks: write-profile.yml
