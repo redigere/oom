@@ -215,6 +215,18 @@ items:
     status: completed
     description: >-
       Rebased 3 commits to conventional format: 'Prevent all system
-      freezes…' → 'feat: …', 'Fix lint and container CI…' → 'ci: …',
-      'Fix container CI…' → 'ci: …'. All use em dash separator.
+      freezes...' to 'feat: ...', 'Fix lint and container CI...' to
+      'ci: ...', 'Fix container CI...' to 'ci: ...'.
       Check script passes on entire history.
+  - task: "docs: AGENTS.md: stricter_paradigms"
+    status: completed
+    description: >-
+      Added 3 new sections to AGENTS.md: no em dashes or Unicode
+      decorations, conventional commit format enforced, CI scripts
+      write violations to stderr. check-commit-convention.py updated
+      to write violation details to stderr, only FAIL count to stdout.
+  - task: "commit_messages: em_dash_removal"
+    status: completed
+    description: >-
+      Filter-branch removed em dashes from 3 commit subjects.
+      Visual separator replaced with ASCII colon.

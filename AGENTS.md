@@ -110,4 +110,16 @@ Characters like `=`, `-`, `|`, `*` used purely as decoration (separator lines, A
 
 ## Why Print Is Reserved for Logs
 
-Printing to stdout or stderr is only for actionable log messages: violation reports, pass/fail status, or error diagnostics. Informational banners, summary tables, bounds ranges, and decorative status lines are not logs. If it does not help diagnose a failure or confirm success, do not print it. Violations go to stderr via `sys.stderr.write()`. Pass/fail goes to stdout via `print("PASS")` or `print("FAIL ...")`.
+Printing to stdout or stderr is only for actionable log messages: violation reports, pass/fail status, or error diagnostics. Informational banners, summary tables, bounds ranges, and decorative status lines are not logs. If it does not help diagnose a failure or confirm success, do not print it. Violations go to stderr via `sys.stderr.write()`. Pass/fail goes to stdout via `print("PASS")` or `print("FAIL <count>")`. Detailed violation messages go to stderr only.
+
+## Why No Em Dashes or Unicode Decorations
+
+The em dash (—), bullet characters, arrows, box drawings, and any Unicode symbol used purely for decoration or visual separation are forbidden in all files: commit messages, task names, Python scripts, shell scripts, YAML, Makefiles, and handoff documents. Only ASCII printable characters (code points 32-126) are permitted in log output and commit subjects. Functional use of `-` as a list prefix or field separator is allowed because the character carries semantic meaning. A standalone `—` on a line or in a message is not.
+
+## Why Conventional Commit Format Is Required
+
+Every commit subject must match `type(optional-scope): subject` where type is one of `feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert`. The subject starts with a lowercase letter. No em dashes, no colons outside the `type:` prefix. This format enables automated changelog generation, semantic versioning analysis, and commit-filtering CI jobs. Subject length should be under 72 characters.
+
+## Why CI Scripts Write Violations to Stderr
+
+When a validation script detects violations, each violation line is written to stderr via `sys.stderr.write()`. Only the summary line (`FAIL <count>` or `PASS`) goes to stdout. This separates diagnostics from status: stdout is machine-parseable (one word: PASS or FAIL), stderr carries human-readable details. The CI runner captures both streams and surfaces them in the job log.

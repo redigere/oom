@@ -34,7 +34,7 @@ for sha in get_commits():
     m = COMMIT_PATTERN.match(subject)
     if not m:
         failures.append(
-            f"commit {sha[:7]} — subject does not follow conventional commit format:\n"
+            f"commit {sha[:7]}: subject not conventional\n"
             f"  expected: type(scope): subject\n"
             f"  got:      {subject}"
         )
@@ -42,21 +42,21 @@ for sha in get_commits():
 
     if len(lines) > 2 and any(t.strip() for t in lines[1:-1]):
         failures.append(
-            f"commit {sha[:7]} — body lines found, only signoff allowed:\n"
+            f"commit {sha[:7]}: body found, only signoff allowed\n"
             f"  {subject}"
         )
 
     sob = [t for t in trailers if t.startswith("Signed-off-by:")]
     if not sob:
         failures.append(
-            f"commit {sha[:7]} — missing Signed-off-by trailer:\n"
+            f"commit {sha[:7]}: missing Signed-off-by\n"
             f"  {subject}"
         )
 
 if failures:
     for f in failures:
-        print(f"FAIL {f}")
-    print(f"\nFAIL {len(failures)} violation(s)")
+        sys.stderr.write(f"FAIL {f}\n")
+    print(f"FAIL {len(failures)}")
     sys.exit(1)
 
 print("PASS")
