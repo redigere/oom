@@ -10,10 +10,10 @@
   register: oom_handler_oomd_unit_find
 
 - name: Mask Systemd-Oomd to Prevent Kernel Swapping OOM Interference
-  ansible.builtin.systemd:
-    name: "{{ item.path | basename | replace('.service', '') }}"
-    masked: true
-    enabled: false
-    state: stopped
+  ansible.builtin.file:
+    src: /dev/null
+    dest: "/etc/systemd/system/{{ item.path | basename }}"
+    state: link
+    force: true
   loop: "{{ oom_handler_oomd_unit_find.files }}"
   when: oom_handler_oomd_unit_find.files | length > 0
