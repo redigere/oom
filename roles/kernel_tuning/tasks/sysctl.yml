@@ -18,5 +18,31 @@
     - {key: 'vm.compaction_proactiveness', value: '{{ system_discovery_compaction_proactiveness }}'}
     - {key: 'vm.page_lock_unfairness', value: '{{ system_discovery_page_lock_unfairness }}'}
     - {key: 'vm.zone_reclaim_mode', value: '{{ system_discovery_zone_reclaim_mode }}'}
-    - {key: 'vm.reap_mem_on_sigkill', value: '{{ system_discovery_reap_mem_on_sigkill }}'}
-    - {key: 'vm.oom_dump_tasks', value: '{{ system_discovery_oom_dump_tasks }}'}
+
+- name: Check Kernel Support for reap_mem_on_sigkill
+  ansible.builtin.stat:
+    path: /proc/sys/vm/reap_mem_on_sigkill
+  register: kernel_tuning_reap_check
+
+- name: Apply reap_mem_on_sigkill (kernel 5.15+)
+  ansible.posix.sysctl:
+    name: vm.reap_mem_on_sigkill
+    value: '{{ system_discovery_reap_mem_on_sigkill }}'
+    sysctl_file: /etc/sysctl.d/99-oom-tuning.conf
+    state: present
+    reload: true
+  when: kernel_tuning_reap_check.stat.exists
+
+- name: Check Kernel Support for oom_dump_tasks
+  ansible.builtin.stat:
+    path: /proc/sys/vm/oom_dump_tasks
+  register: kernel_tuning_oomdump_check
+
+- name: Apply oom_dump_tasks (kernel 5.15+)
+  ansible.posix.sysctl:
+    name: vm.oom_dump_tasks
+    value: '{{ system_discovery_oom_dump_tasks }}'
+    sysctl_file: /etc/sysctl.d/99-oom-tuning.conf
+    state: present
+    reload: true
+  when: kernel_tuning_oomdump_check.stat.exists
