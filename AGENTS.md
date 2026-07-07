@@ -5,6 +5,12 @@
 Every commit MUST have exactly one subject line followed by a signed-off-by trailer.
 No body, no multi-line messages. See DEV.md for format details.
 
+### Signed-off-by Name Format
+
+The sign-off name must be a real first and last name (e.g., `Alessio Attilio`),
+not a single-word nickname, username, or bot handle. CI enforces at least
+two whitespace-separated words before the email in the sign-off trailer.
+
 ## Why This Project Targets Debian, RedHat, and Archlinux
 
 These three families cover ~95% of Linux developer workstations. Debian/Ubuntu for servers and laptops, Fedora/RHEL for enterprise workstations, Archlinux for enthusiasts. Each has different package names, service managers, and config paths for zRAM and OOM daemons. Supporting all three means the playbook runs unmodified on the vast majority of development machines.

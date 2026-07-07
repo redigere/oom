@@ -9,6 +9,10 @@ COMMIT_PATTERN = re.compile(
     r':\s(?P<subject>.+)$'
 )
 
+SOB_PATTERN = re.compile(
+    r'^Signed-off-by:\s+(?P<name>.+?)\s+<(?P<email>[^>]+)>$'
+)
+
 failures = []
 
 def get_commits():
@@ -52,6 +56,19 @@ for sha in get_commits():
             f"commit {sha[:7]}: missing Signed-off-by\n"
             f"  {subject}"
         )
+    else:
+        sm = SOB_PATTERN.match(sob[0])
+        if not sm:
+            failures.append(
+                f"commit {sha[:7]}: invalid sign-off format\n"
+                f"  expected: Signed-off-by: Firstname Lastname <email>\n"
+                f"  got:      {sob[0]}"
+            )
+        elif len(sm.group('name').split()) < 2:
+            failures.append(
+                f"commit {sha[:7]}: sign-off name must be firstname lastname\n"
+                f"  got:      {sm.group('name')}"
+            )
 
 if failures:
     for f in failures:

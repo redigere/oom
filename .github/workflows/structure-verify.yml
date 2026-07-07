@@ -30,7 +30,14 @@ jobs:
             sob=$(git log -1 --format="%(trailers:key=Signed-off-by,valueonly)" "$sha" | head -1)
             msg=$(git log -1 --format=%s "$sha")
             if [ -z "$sob" ]; then
-              echo "FAIL commit ${sha:0:7} $msg — missing Signed-off-by"
+              echo "FAIL commit ${sha:0:7} $msg -- missing Signed-off-by"
+              exit 1
+            fi
+            name="${sob%<*}"
+            name="${name%"${name##*[! ]}"}"
+            words=($name)
+            if [ ${#words[@]} -lt 2 ]; then
+              echo "FAIL commit ${sha:0:7} $msg -- sign-off name must be firstname lastname, got '$name'"
               exit 1
             fi
           done
