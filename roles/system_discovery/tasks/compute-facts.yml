@@ -11,8 +11,8 @@
       {{ [[((500 * 8192 / ([(ansible_facts['memtotal_mb'] | int), 1] | max))
            | round(0, 'ceil') | int), 10] | max, 1000] | min }}
     system_discovery_earlyoom_min_free_pct: >-
-      {{ [[((40000 / ([(ansible_facts['memtotal_mb'] | int), 1] | max))
-           | round(0, 'ceil') | int), 3] | max, 10] | min }}
+      {{ ([[((40000 / ([(ansible_facts['memtotal_mb'] | int), 1] | max))
+           | round(0, 'ceil') | int), 3] | max, 10] | min) | int }}
     system_discovery_dirty_ratio: '5'
     system_discovery_dirty_background_ratio: '2'
     system_discovery_min_free_kbytes: >-
