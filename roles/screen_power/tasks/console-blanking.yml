@@ -1,0 +1,19 @@
+---
+- name: Check for GRUB Configuration File
+  ansible.builtin.stat:
+    path: /etc/default/grub
+  register: screen_power_grub_config
+
+- name: Disable Console Blanking on Kernel Command Line
+  ansible.builtin.lineinfile:
+    path: /etc/default/grub
+    regexp: '^GRUB_CMDLINE_LINUX_DEFAULT="((?:(?!\bconsoleblank=0\b).)*)"$'
+    line: 'GRUB_CMDLINE_LINUX_DEFAULT="\1 consoleblank=0"'
+    backrefs: true
+  register: screen_power_grub_updated
+  when: screen_power_grub_config.stat.exists
+
+- name: Update Bootloader to Persist Console Blanking Parameter
+  ansible.builtin.command: update-grub
+  when: screen_power_grub_config.stat.exists and screen_power_grub_updated.changed
+  changed_when: true

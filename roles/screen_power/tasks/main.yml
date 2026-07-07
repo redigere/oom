@@ -1,0 +1,7 @@
+---
+- name: Disable Console Screen Blanking via Kernel Parameter
+  ansible.builtin.import_tasks: console-blanking.yml
+- name: Disable X11 DPMS to Prevent Display Power-Off on Idle
+  ansible.builtin.import_tasks: x11-dpms.yml
+- name: Disable Desktop Environment Idle Blanking and Screensaver
+  ansible.builtin.import_tasks: desktop-idle.yml

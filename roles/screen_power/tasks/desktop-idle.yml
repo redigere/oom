@@ -1,0 +1,63 @@
+---
+- name: Check for GNOME GSettings Tool
+  ansible.builtin.stat:
+    path: /usr/bin/gsettings
+  register: screen_power_gsettings
+
+- name: Check for GNOME Session Schema
+  ansible.builtin.stat:
+    path: /usr/share/glib-2.0/schemas/org.gnome.desktop.session.gschema.xml
+  register: screen_power_gnome_session
+
+- name: Check Current GNOME Idle Delay Value
+  ansible.builtin.command: gsettings get org.gnome.desktop.session idle-delay
+  register: screen_power_idle_delay
+  become: false
+  when: screen_power_gsettings.stat.exists and screen_power_gnome_session.stat.exists
+  changed_when: false
+
+- name: Disable GNOME Session Idle Delay
+  ansible.builtin.command: gsettings set org.gnome.desktop.session idle-delay 0
+  become: false
+  when:
+    - screen_power_gsettings.stat.exists
+    - screen_power_gnome_session.stat.exists
+    - screen_power_idle_delay.stdout | trim != '0'
+  changed_when: true
+
+- name: Check for GNOME Screensaver Schema
+  ansible.builtin.stat:
+    path: /usr/share/glib-2.0/schemas/org.gnome.desktop.screensaver.gschema.xml
+  register: screen_power_gnome_screensaver
+
+- name: Check Current GNOME Screensaver Lock Setting
+  ansible.builtin.command: gsettings get org.gnome.desktop.screensaver lock-enabled
+  register: screen_power_lock_enabled
+  become: false
+  when: screen_power_gsettings.stat.exists and screen_power_gnome_screensaver.stat.exists
+  changed_when: false
+
+- name: Disable GNOME Screensaver Lock
+  ansible.builtin.command: gsettings set org.gnome.desktop.screensaver lock-enabled false
+  become: false
+  when:
+    - screen_power_gsettings.stat.exists
+    - screen_power_gnome_screensaver.stat.exists
+    - screen_power_lock_enabled.stdout | trim != 'false'
+  changed_when: true
+
+- name: Check Current GNOME Screensaver Idle Activation Setting
+  ansible.builtin.command: gsettings get org.gnome.desktop.screensaver idle-activation-enabled
+  register: screen_power_idle_activation
+  become: false
+  when: screen_power_gsettings.stat.exists and screen_power_gnome_screensaver.stat.exists
+  changed_when: false
+
+- name: Disable GNOME Screensaver Idle Activation
+  ansible.builtin.command: gsettings set org.gnome.desktop.screensaver idle-activation-enabled false
+  become: false
+  when:
+    - screen_power_gsettings.stat.exists
+    - screen_power_gnome_screensaver.stat.exists
+    - screen_power_idle_activation.stdout | trim != 'false'
+  changed_when: true

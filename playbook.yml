@@ -9,3 +9,4 @@
     - oom_handler
     - dev_throttling
     - thermal_throttling
+    - screen_power
