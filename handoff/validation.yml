@@ -19,7 +19,7 @@ verify_structure:
   status: pass
   checker: python
   dynamic_discovery: true
-  handoff_schema_agnostic: true
+  handoff_schema_enforced: true
   checks:
     - role_file_exists
     - main_uses_import
@@ -34,4 +34,5 @@ verify_structure:
     - phony_declared
     - phony_recipe_full_coverage
     - handoff_yaml_valid
+    - handoff_schema_validated
     - yamllint_strict

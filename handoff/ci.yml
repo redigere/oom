@@ -31,3 +31,7 @@ scripts:
     scope: formula_validation
   - path: .github/scripts/verify-structure.py
     scope: convention_verification
+  - path: handoff/render.py
+    scope: handoff_rendering_and_schema_validation
+  - path: handoff/update-baseline.py
+    scope: kernel_baseline_update

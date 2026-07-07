@@ -59,6 +59,24 @@ items:
       (max(ram_mb,1)). validate-formulas.py tests 0-131072 MB
       RAM and 1-1024 vCPUs. Reference points include 0 MB (64 KB
       machine) and 1024-core mainframe.
+  - task: handoff_schema_validation
+    status: completed
+    description: >-
+      handoff/_schemas/ enforces required keys and types for every
+      handoff YAML file via validate_schema() in both render.py
+      and verify-structure.py. Schema drift causes CI failure.
+  - task: handoff_render_dynamic_discovery
+    status: completed
+    description: >-
+      render.py replaces hardcoded Makefile cat commands with
+      filesystem-driven discovery of handoff/*.yml, validated
+      against _schemas/ before rendering.
+  - task: kernel_baseline_structured_update
+    status: completed
+    description: >-
+      update-baseline.py replaces shell echo YAML generation in
+      kernel-bump.yml. Reads stdin YAML dict, merges into existing
+      baseline, rejects unknown keys.
   - task: structure_verify_validate_on_all_targets
     status: pending
     description: >-
