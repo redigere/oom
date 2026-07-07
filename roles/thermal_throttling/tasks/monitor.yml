@@ -73,9 +73,9 @@
       WantedBy=timers.target
     mode: '0644'
 
-- name: Determine Thermal Monitor Service Registration Status
-  ansible.builtin.systemd:
-    name: thermal-monitor.timer
+- name: Check Thermal Monitor Timer Unit Registration
+  ansible.builtin.stat:
+    path: /etc/systemd/system/thermal-monitor.timer
   register: thermal_throttling_timer_check
 
 - name: Enable and Start Thermal Monitor Timer
@@ -84,14 +84,10 @@
     state: started
     enabled: true
     daemon_reload: true
-  when:
-    - thermal_throttling_timer_check.status is defined
-    - thermal_throttling_timer_check.status.LoadState != 'not-found'
+  when: thermal_throttling_timer_check.stat.exists
 
 - name: Trigger Initial Thermal Monitor Run
   ansible.builtin.systemd:
     name: thermal-monitor.service
     state: started
-  when:
-    - thermal_throttling_timer_check.status is defined
-    - thermal_throttling_timer_check.status.LoadState != 'not-found'
+  when: thermal_throttling_timer_check.stat.exists

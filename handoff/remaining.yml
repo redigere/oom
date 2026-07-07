@@ -230,3 +230,17 @@ items:
     description: >-
       Filter-branch removed em dashes from 3 commit subjects.
       Visual separator replaced with ASCII colon.
+  - task: "fix: debian: python3_apt_check_mode"
+    status: completed
+    description: >-
+      Added python3-apt to apt-get install in container-test.yml
+      Debian step. Required by ansible.builtin.package module for
+      check mode on Debian-family systems.
+  - task: "fix: arch: thermal_throttling_systemd_docker"
+    status: completed
+    description: >-
+      Replaced ansible.builtin.systemd registration check with
+      ansible.builtin.stat on thermal-monitor.timer unit path in
+      monitor.yml. Gates enable/start on stat.exists instead of
+      status.LoadState. Matches pattern used by zram_swap and
+      oom_handler for Docker compatibility.

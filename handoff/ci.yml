@@ -28,9 +28,9 @@ workflows:
       - conventional_commit_check
   - name: oom-playbook-container-test
     jobs:
-      - debian_syntax_check
-      - fedora_syntax_check
-      - arch_syntax_check
+      - debian_syntax_check_and_check_mode
+      - fedora_syntax_check_and_check_mode
+      - arch_syntax_check_and_check_mode
 scripts:
   - path: .github/scripts/validate-formulas.py
     scope: formula_validation

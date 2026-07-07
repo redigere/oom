@@ -17,7 +17,7 @@ jobs:
       - name: Install Ansible
         run: |
           apt-get update
-          apt-get install -y python3-pip
+          apt-get install -y python3-pip python3-apt
           pip3 install ansible
       - name: Install ansible collections
         run: ansible-galaxy collection install ansible.posix community.general
