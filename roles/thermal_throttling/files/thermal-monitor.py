@@ -2,6 +2,7 @@
 import json
 import os
 import glob
+import sys
 
 CONFIG_PATH = "/etc/thermal-throttling/config.json"
 THROTTLED_MARKER = "THERMAL_THROTTLING_ACTIVE=1"
@@ -23,8 +24,9 @@ for zone_path in glob.glob(zone_glob):
             if raw and int(raw) >= threshold:
                 hot = True
                 break
-    except (ValueError, OSError):
-        pass
+    except (ValueError, OSError) as e:
+        e_type = type(e).__name__
+        sys.stderr.write(f"thermal_monitor: {zone_path}: {e_type}: {e}\n")
 
 is_throttled = False
 if os.path.isfile(profile_path):

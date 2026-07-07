@@ -200,7 +200,8 @@ if os.path.isfile(kb_yml):
         try:
             import yaml
             kb = yaml.safe_load(f)
-        except Exception:
+        except Exception as e:
+            fail("kernel_baseline_parse_error", str(e))
             kb = None
     if not kb or not isinstance(kb, dict):
         fail("kernel_baseline_invalid")
@@ -235,7 +236,8 @@ for scope, label in [("handoff/", "handoff"), (".", "root")]:
                 print(f"  {line}")
             failures += 1
     except FileNotFoundError:
-        pass
+        print(f"FAIL yamllint_{label} binary not found in PATH")
+        failures += 1
 
 if failures:
     print(f"FAIL {failures} violations")
