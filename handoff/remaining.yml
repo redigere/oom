@@ -204,3 +204,17 @@ items:
       handoff-split job in structure-verify.yml enforces: no
       HANDOFF.md, required YAML files present, each has a
       corresponding schema in handoff/_schemas/.
+  - task: "ci: commit_convention_check"
+    status: completed
+    description: >-
+      commit-convention.yml workflow verifies every commit follows
+      conventional commit format (type(scope): subject), single-line
+      subject, and Signed-off-by trailer. Separate workflow file
+      containing one job. Script targets DESC (subject line).
+  - task: "commit_messages: conventional_format_fix"
+    status: completed
+    description: >-
+      Rebased 3 commits to conventional format: 'Prevent all system
+      freezes…' → 'feat: …', 'Fix lint and container CI…' → 'ci: …',
+      'Fix container CI…' → 'ci: …'. All use em dash separator.
+      Check script passes on entire history.

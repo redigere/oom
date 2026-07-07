@@ -23,6 +23,9 @@ workflows:
       - formula_validation
       - structure_verification
       - baseline_commit
+  - name: oom-commit-convention
+    jobs:
+      - conventional_commit_check
   - name: oom-playbook-container-test
     jobs:
       - debian_syntax_check
@@ -35,6 +38,8 @@ scripts:
     scope: convention_verification
   - path: .github/scripts/check-handoff-split.py
     scope: handoff_split_check
+  - path: .github/scripts/check-commit-convention.py
+    scope: conventional_commit_check
   - path: handoff/render.py
     scope: handoff_rendering_and_schema_validation
   - path: handoff/update-baseline.py
