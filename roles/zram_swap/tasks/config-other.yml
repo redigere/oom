@@ -12,8 +12,8 @@
   when: ansible_facts['os_family'] in ['RedHat', 'Archlinux']
 
 - name: Check ZRAM Generator Service Registration
-  ansible.builtin.systemd:
-    name: systemd-zram-setup@zram0
+  ansible.builtin.stat:
+    path: /usr/lib/systemd/system/systemd-zram-setup@.service
   register: zram_swap_generator_check
   when: ansible_facts['os_family'] in ['RedHat', 'Archlinux']
 
@@ -26,5 +26,4 @@
   when:
     - ansible_facts['os_family'] in ['RedHat', 'Archlinux']
     - zram_swap_config_redhat.changed
-    - zram_swap_generator_check.status is defined
-    - zram_swap_generator_check.status.LoadState != 'not-found'
+    - zram_swap_generator_check.stat.exists

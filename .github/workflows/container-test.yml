@@ -16,8 +16,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Ansible
         run: apt-get update && apt-get install -y ansible
-      - name: Install ansible.posix
-        run: ansible-galaxy collection install ansible.posix
+      - name: Install ansible collections
+        run: ansible-galaxy collection install ansible.posix community.general
       - name: Validate thermal-monitor.py syntax
         run: python3 -m py_compile roles/thermal_throttling/files/thermal-monitor.py
       - name: Validate OOM playbook syntax
@@ -34,8 +34,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Ansible
         run: dnf install -y ansible-core
-      - name: Install ansible.posix
-        run: ansible-galaxy collection install ansible.posix
+      - name: Install ansible collections
+        run: ansible-galaxy collection install ansible.posix community.general
       - name: Validate thermal-monitor.py syntax
         run: python3 -m py_compile roles/thermal_throttling/files/thermal-monitor.py
       - name: Validate OOM playbook syntax
@@ -52,8 +52,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Ansible
         run: pacman -Sy --noconfirm ansible
-      - name: Install ansible.posix
-        run: ansible-galaxy collection install ansible.posix
+      - name: Install ansible collections
+        run: ansible-galaxy collection install ansible.posix community.general
       - name: Validate thermal-monitor.py syntax
         run: python3 -m py_compile roles/thermal_throttling/files/thermal-monitor.py
       - name: Validate OOM playbook syntax

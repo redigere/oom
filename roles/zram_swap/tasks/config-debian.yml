@@ -17,11 +17,13 @@
   when: ansible_facts['os_family'] == 'Debian'
 
 - name: Reset ZRAM Device Before Applying New Configuration
-  ansible.builtin.shell: |
-    if swapon --show=NAME --noheadings 2>/dev/null | grep -qxF /dev/zram0; then
-      swapoff /dev/zram0
-    fi
-    zramctl -r /dev/zram0
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      if swapon --show=NAME --noheadings 2>/dev/null | grep -qxF /dev/zram0; then
+        swapoff /dev/zram0
+      fi
+      zramctl -r /dev/zram0
   when:
     - ansible_facts['os_family'] == 'Debian'
     - zram_swap_config_debian.changed
