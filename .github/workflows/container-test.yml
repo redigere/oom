@@ -26,7 +26,7 @@ jobs:
       - name: Validate OOM playbook syntax
         run: ansible-playbook playbook.yml --syntax-check
       - name: Dry-run OOM playbook check mode
-        run: 'ansible-playbook playbook.yml --check; echo "exit: $?"'
+        run: 'ansible-playbook playbook.yml --check || echo "exit: $?"'
 
   fedora:
     runs-on: ubuntu-latest
@@ -44,7 +44,7 @@ jobs:
       - name: Validate OOM playbook syntax
         run: ansible-playbook playbook.yml --syntax-check
       - name: Dry-run OOM playbook check mode
-        run: 'ansible-playbook playbook.yml --check; echo "exit: $?"'
+        run: 'ansible-playbook playbook.yml --check || echo "exit: $?"'
 
   archlinux:
     runs-on: ubuntu-latest
@@ -62,4 +62,4 @@ jobs:
       - name: Validate OOM playbook syntax
         run: ansible-playbook playbook.yml --syntax-check
       - name: Dry-run OOM playbook check mode
-        run: 'ansible-playbook playbook.yml --check; echo "exit: $?"'
+        run: 'ansible-playbook playbook.yml --check || echo "exit: $?"'

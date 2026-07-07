@@ -11,8 +11,8 @@
   when: ansible_facts['os_family'] == 'Debian'
 
 - name: Check ZRAM Swap Service Registration
-  ansible.builtin.systemd:
-    name: zramswap
+  ansible.builtin.stat:
+    path: /lib/systemd/system/zramswap.service
   register: zram_swap_service_check
   when: ansible_facts['os_family'] == 'Debian'
 
@@ -38,5 +38,4 @@
   when:
     - ansible_facts['os_family'] == 'Debian'
     - zram_swap_config_debian.changed
-    - zram_swap_service_check.status is defined
-    - zram_swap_service_check.status.LoadState != 'not-found'
+    - zram_swap_service_check.stat.exists
