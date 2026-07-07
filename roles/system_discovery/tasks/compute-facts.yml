@@ -1,0 +1,15 @@
+---
+- name: Compute Universal System-Tuned Allocation Variables
+  ansible.builtin.set_fact:
+    system_discovery_target_zram_mb: >-
+      {{ [[ansible_facts['memtotal_mb'] | int, 16384] | min, 2048] | max }}
+    system_discovery_safe_core_limit: >-
+      {{ [(ansible_facts['processor_vcpus'] | int
+        - ((ansible_facts['processor_vcpus'] | int / 8)
+          | round(0, 'ceil') | int)), 1] | max }}
+    system_discovery_watermark_scale_factor: >-
+      {{ [[((500 * 8192 / ([(ansible_facts['memtotal_mb'] | int), 1] | max))
+           | round(0, 'ceil') | int), 10] | max, 1000] | min }}
+    system_discovery_earlyoom_min_free_pct: >-
+      {{ [[((40000 / ([(ansible_facts['memtotal_mb'] | int), 1] | max))
+           | round(0, 'ceil') | int), 3] | max, 10] | min }}

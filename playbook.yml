@@ -1,0 +1,10 @@
+---
+- name: Root-Level Workstation Performance Optimization and OOM Eradication
+  hosts: localhost
+  gather_facts: true
+  roles:
+    - system_discovery
+    - kernel_tuning
+    - zram_swap
+    - oom_handler
+    - dev_throttling

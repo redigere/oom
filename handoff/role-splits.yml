@@ -1,0 +1,41 @@
+---
+roles:
+  - name: system_discovery
+    subfiles:
+      - assert-os.yml
+      - compute-facts.yml
+    main_imports: 2
+  - name: kernel_tuning
+    subfiles:
+      - mglru.yml
+      - sysctl.yml
+      - psi.yml
+    main_imports: 3
+  - name: zram_swap
+    subfiles:
+      - swapoff.yml
+      - install.yml
+      - config-debian.yml
+      - config-other.yml
+    main_imports: 4
+  - name: oom_handler
+    subfiles:
+      - mask-oomd.yml
+      - install.yml
+      - config.yml
+      - service.yml
+    main_imports: 4
+  - name: dev_throttling
+    subfiles:
+      - compute-heap.yml
+      - write-profile.yml
+    main_imports: 2
+  - name: thermal_throttling
+    subfiles: []
+    main_imports: 0
+    status: pending
+    description: >-
+      Thermal throttling protection — monitors CPU package
+      temperature and throttling events, dynamically reduces
+      build parallelism. Design pending (see remaining.yml).
+total_subfiles: 15

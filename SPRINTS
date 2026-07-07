@@ -1,0 +1,46 @@
+SPRINTS
+
+Sprint 1: Core Architecture and Formulas
+
+Goal: Establish the 5-role Ansible architecture with continuous universal formulas replacing all discrete thresholds.
+Done: Complete role structure, cross-role data coupling via system_discovery prefix, GRUB PSI injection, MGLRU idempotency.
+Output: playbook.yml, 5 roles with tasks, Makefile with setup run check status clean targets.
+
+Sprint 2: CI Infrastructure
+
+Goal: Split monolithic CI into independent concern-specific workflows.
+Done: 5 workflows created covering linting, syntax validation, formula validation, structure verification, and container-based OS matrix testing.
+Output: lint.yml, syntax.yml, validate-formulas.yml, structure-verify.yml, container-test.yml.
+
+Sprint 3: Validation and Conventions
+
+Goal: Build automated validation that enforces all project conventions.
+Done: Python formula validator and bash structure verifier created. Both integrated into CI.
+Output: validate-formulas.py, verify-structure.sh.
+
+Sprint 4: Cleanup and Enforcement
+
+Goal: Remove all comments, debug tasks, prints, and visual decorations from every file in the project.
+Done: Zero comments remaining in any YAML Python or Shell file. Zero debug or print tasks. Zero visual decorations.
+Output: Clean codebase with only functional code and documentation prose.
+
+Sprint 5: Ansible Role Task Splitting
+
+Goal: Split each role into single-responsibility sub-files.
+Done: All 5 roles split. Each main yml contains only import_tasks statements. All validations pass.
+Output: 16 sub-files across 5 roles plus updated main yml files.
+
+Sprint 6: Package Lifecycle
+
+Goal: Extend setup-apt and setup-pip Makefile targets with package removal and cleanup operations beyond install.
+Done: apt-get autoremove, apt-get autoclean, pip cache purge, and pip --upgrade added to Makefile targets.
+
+Sprint 7: Hardcoded Value Elimination and Extreme Edge Hardening
+
+Goal: Remove every hardcoded parameter from Python scripts. Verify formulas work on devices from 64 KB RAM to 128 GB and 1 to 1024 vCPUs.
+Done: All formula constants extracted as named module variables. Reference points computed from formulas instead of hardcoded. Test ranges derived from formula bounds. Zero-RAM division guard. All handoff validation moved from key hardcoding to schema-agnostic YAML validity checks. Makefile decorative symbols and error suppression removed. verify-structure.sh replaced with Python equivalent. kernel-bump.yml continue-on-error removed. container-test.yml || echo replaced with exit code pattern.
+
+Sprint 8: Thermal Throttling Protection
+
+Goal: Design and implement thermal throttling awareness for sustained compilation workloads.
+Pending: Needs architecture decision on approach (a/b/c from handoff/remaining.yml) and implementation across all three OS families.

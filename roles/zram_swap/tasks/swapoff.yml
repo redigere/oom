@@ -1,0 +1,17 @@
+---
+- name: Extract Target Swap Devices From System Registry
+  ansible.builtin.command: swapon --show=NAME --noheadings
+  register: zram_swap_active_swaps
+  changed_when: false
+
+- name: Purge Active In-Memory Disk-Bound Swap Mechanisms At Runtime
+  ansible.builtin.command: "swapoff {{ item }}"
+  loop: "{{ zram_swap_active_swaps.stdout_lines }}"
+  when: zram_swap_active_swaps.stdout_lines | length > 0 and 'zram' not in item
+  changed_when: true
+
+- name: Eradicate Disk Swap Mount Entries From Static System Fstab
+  ansible.builtin.replace:
+    path: /etc/fstab
+    regexp: '^([^#]\S+\s+\S+\s+swap\s+.*)$'
+    replace: '# Removed by Performance Automation Tuning Framework: \1'

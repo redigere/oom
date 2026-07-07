@@ -1,0 +1,56 @@
+---
+name: container-test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  debian:
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Ansible
+        run: apt-get update && apt-get install -y ansible
+      - name: Install ansible.posix
+        run: ansible-galaxy collection install ansible.posix
+      - name: Syntax check
+        run: ansible-playbook playbook.yml --syntax-check
+      - name: Dry-run check mode
+        run: 'ansible-playbook playbook.yml --check; echo "exit: $?"'
+
+  fedora:
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Ansible
+        run: dnf install -y ansible-core
+      - name: Install ansible.posix
+        run: ansible-galaxy collection install ansible.posix
+      - name: Syntax check
+        run: ansible-playbook playbook.yml --syntax-check
+      - name: Dry-run check mode
+        run: 'ansible-playbook playbook.yml --check; echo "exit: $?"'
+
+  archlinux:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Ansible
+        run: pacman -Sy --noconfirm ansible
+      - name: Install ansible.posix
+        run: ansible-galaxy collection install ansible.posix
+      - name: Syntax check
+        run: ansible-playbook playbook.yml --syntax-check
+      - name: Dry-run check mode
+        run: 'ansible-playbook playbook.yml --check; echo "exit: $?"'

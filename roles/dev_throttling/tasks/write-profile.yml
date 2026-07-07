@@ -1,0 +1,7 @@
+---
+- name: Deploy Development Environment Resource Limit Profile
+  ansible.builtin.copy:
+    dest: /etc/profile.d/node_heap_limit.sh
+    content: |
+      export NODE_OPTIONS="--max-old-space-size={{ dev_throttling_node_heap_mb }}"
+    mode: '0644'

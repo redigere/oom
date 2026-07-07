@@ -1,0 +1,30 @@
+---
+- name: Template ZRAM Generator Config For RedHat and Archlinux
+  ansible.builtin.copy:
+    dest: /etc/systemd/zram-generator.conf
+    content: |
+      [zram0]
+      zram-size = {{ system_discovery_target_zram_mb }}M
+      compression-algorithm = zstd
+      options = pri=100
+    mode: '0644'
+  register: zram_swap_config_redhat
+  when: ansible_facts['os_family'] in ['RedHat', 'Archlinux']
+
+- name: Determine ZRAM Generator Service Registration Status
+  ansible.builtin.systemd:
+    name: systemd-zram-setup@zram0
+  register: zram_swap_generator_check
+  when: ansible_facts['os_family'] in ['RedHat', 'Archlinux']
+
+- name: Restart ZRAM Generator Service and Enable Persistence (RedHat/Arch)
+  ansible.builtin.systemd:
+    name: systemd-zram-setup@zram0
+    state: restarted
+    enabled: true
+    daemon_reload: true
+  when:
+    - ansible_facts['os_family'] in ['RedHat', 'Archlinux']
+    - zram_swap_config_redhat.changed
+    - zram_swap_generator_check.status is defined
+    - zram_swap_generator_check.status.LoadState != 'not-found'

@@ -1,0 +1,19 @@
+---
+- name: Inspect Bootloader Configuration Environment
+  ansible.builtin.stat:
+    path: /etc/default/grub
+  register: kernel_tuning_grub_config
+
+- name: Inject PSI Parameters Into GRUB Commandline
+  ansible.builtin.lineinfile:
+    path: /etc/default/grub
+    regexp: '^GRUB_CMDLINE_LINUX_DEFAULT="((?:(?!\bpsi=1\b).)*)"$'
+    line: 'GRUB_CMDLINE_LINUX_DEFAULT="\1 psi=1"'
+    backrefs: true
+  register: kernel_tuning_grub_updated
+  when: kernel_tuning_grub_config.stat.exists
+
+- name: Rebuild Bootloader State Machinery For Target System Engine
+  ansible.builtin.command: update-grub
+  when: kernel_tuning_grub_config.stat.exists and kernel_tuning_grub_updated.changed
+  changed_when: true

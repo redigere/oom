@@ -1,0 +1,41 @@
+CHANGELOG
+
+v0.1.0
+
+Established 5-role Ansible structure targeting Debian, RedHat, and Archlinux.
+Replaced all threshold-based formulas with continuous universal functions of RAM and vCPU.
+Formulas are determined by continuous mathematical functions.
+Cross-role data coupling enforced via system_discovery prefix convention.
+systemd-boot GRUB PSI injection implemented with word-boundary regex.
+MGLRU read-before-write idempotency check implemented.
+
+v0.2.0
+
+Split monolithic CI into 5 independent job-based workflows.
+Workflows cover linting, syntax validation, formula validation, structure verification, and container tests.
+
+v0.3.0
+
+Added Python formula validator verifying monotonicity, bounds, and reference points across 4 formulas and 128 CPU points.
+Added bash structure verifier with 10 convention checks for role files, variable prefixes, hardcoded values, Makefile rules, and ignore_errors prohibition.
+All existing validation results pass across yamllint, ansible-lint production, playbook syntax, formula validator, and structure verifier.
+
+v0.4.0
+
+Removed all comments from YAML workflows, playbooks, and role files.
+Removed all comments from Python and shell scripts.
+Removed all non-log print statements from Python validator.
+Removed debug print task from system_discovery.
+Removed all dashes, equals, and visual decorations from documentation output.
+All 5 validation checks pass with zero violations.
+
+v0.5.0
+
+Split each roles tasks main yml into job-based sub-files imported via import_tasks.
+Each sub-file focuses on a single concern.
+No task files exceed single-responsibility scope.
+All 5 validation checks pass with zero violations.
+
+v0.6.0
+
+Extend setup-apt and setup-pip Makefile targets to include remove autoremove autoclean for stale system packages and pip packages no longer listed in requirements files.

@@ -1,0 +1,5 @@
+---
+- name: Assert OS Compatibility
+  ansible.builtin.import_tasks: assert-os.yml
+- name: Compute System Tuning Facts
+  ansible.builtin.import_tasks: compute-facts.yml

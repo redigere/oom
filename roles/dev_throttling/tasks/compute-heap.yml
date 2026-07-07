@@ -1,0 +1,5 @@
+---
+- name: Compute Node Heap Upper Bound From ZRAM Pool Capacity
+  ansible.builtin.set_fact:
+    dev_throttling_node_heap_mb: >-
+      {{ [((system_discovery_target_zram_mb | int) * 0.5) | int, 512] | max }}

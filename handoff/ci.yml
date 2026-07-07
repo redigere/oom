@@ -1,0 +1,33 @@
+---
+workflows:
+  - name: lint
+    jobs:
+      - yamllint_strict
+      - ansible_lint_production
+  - name: syntax
+    jobs:
+      - ansible_playbook_syntax_check
+  - name: validate-formulas
+    jobs:
+      - python_formula_validation
+  - name: structure-verify
+    jobs:
+      - python_convention_verification
+  - name: kernel-bump
+    trigger: weekly_schedule
+    jobs:
+      - kernel_version_detection
+      - feature_collection
+      - formula_validation
+      - structure_verification
+      - baseline_commit
+  - name: container-test
+    jobs:
+      - debian_syntax_check
+      - fedora_syntax_check
+      - arch_syntax_check
+scripts:
+  - path: .github/scripts/validate-formulas.py
+    scope: formula_validation
+  - path: .github/scripts/verify-structure.py
+    scope: convention_verification

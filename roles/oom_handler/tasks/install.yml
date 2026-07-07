@@ -1,0 +1,5 @@
+---
+- name: Install Early OOM Process Termination Daemon
+  ansible.builtin.package:
+    name: earlyoom
+    state: present

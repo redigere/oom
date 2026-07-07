@@ -1,0 +1,37 @@
+---
+yamllint_strict: pass
+ansible_lint_profile: production
+ansible_lint_result: pass
+ansible_playbook_syntax: pass
+validate_formulas:
+  status: pass
+  formula_count: 4
+  zero_division_guard: true
+  constants_extracted: true
+  reference_points_computed: true
+  test_ranges_derived_from_bounds: true
+  checks:
+    - monotonicity
+    - bounds
+    - boundary_edge_cases
+    - zero_division_immunity
+verify_structure:
+  status: pass
+  checker: python
+  dynamic_discovery: true
+  handoff_schema_agnostic: true
+  checks:
+    - role_file_exists
+    - main_uses_import
+    - register_prefix
+    - no_hardcoded_wmsf
+    - no_hardcoded_earlyoom_m
+    - no_ignore_errors
+    - no_failed_when
+    - makefile_echo_at
+    - makefile_no_true
+    - makefile_no_null
+    - phony_declared
+    - phony_recipe_full_coverage
+    - handoff_yaml_valid
+    - yamllint_strict

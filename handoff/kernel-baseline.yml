@@ -1,0 +1,15 @@
+---
+current_kernel: unknown
+previous_kernel: unknown
+first_detected: unknown
+features:
+  mglru: unchecked
+  psi: unchecked
+  zram: unchecked
+sysctl_defaults:
+  vm.swappiness: unknown
+  vm.watermark_scale_factor: unknown
+  vm.vfs_cache_pressure: unknown
+validation:
+  formulas: unchecked
+  structure: unchecked

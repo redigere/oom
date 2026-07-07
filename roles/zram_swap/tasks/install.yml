@@ -1,0 +1,9 @@
+---
+- name: Install Target Distribution Native Compressed Volatile Resource Drivers
+  ansible.builtin.package:
+    name: >-
+      {{ (ansible_facts['os_family'] == 'Debian')
+      | ternary('zram-tools',
+        (ansible_facts['os_family'] == 'RedHat')
+        | ternary('systemd-zram-generator', 'zram-generator')) }}
+    state: present

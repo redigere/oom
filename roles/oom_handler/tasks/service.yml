@@ -1,0 +1,16 @@
+---
+- name: Determine EarlyOOM Service Registration Status
+  ansible.builtin.systemd:
+    name: earlyoom
+  register: oom_handler_earlyoom_service_check
+
+- name: Restart EarlyOOM Daemon and Enable Persistence
+  ansible.builtin.systemd:
+    name: earlyoom
+    state: restarted
+    enabled: true
+    daemon_reload: true
+  when:
+    - oom_handler_earlyoom_config.changed
+    - oom_handler_earlyoom_service_check.status is defined
+    - oom_handler_earlyoom_service_check.status.LoadState != 'not-found'

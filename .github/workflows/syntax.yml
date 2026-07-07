@@ -1,0 +1,20 @@
+---
+name: syntax
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ansible-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Ansible
+        run: sudo apt-get update && sudo apt-get install -y ansible
+      - name: Install ansible.posix collection
+        run: ansible-galaxy collection install ansible.posix
+      - name: Syntax check
+        run: ansible-playbook playbook.yml --syntax-check

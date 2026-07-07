@@ -1,0 +1,8 @@
+---
+- name: Assert Target OS Family Compatibility
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] in ['Debian', 'RedHat', 'Archlinux']
+    fail_msg: >-
+      Target OS family {{ ansible_facts['os_family'] }}
+      is not supported by this automation framework.

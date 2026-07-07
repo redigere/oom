@@ -1,0 +1,17 @@
+---
+- name: Configure EarlyOOM Process Termination Policy for Responsive Desktop
+  ansible.posix.sysctl:
+    name: "vm.panic_on_oom"
+    value: "0"
+    sysctl_file: /etc/sysctl.d/99-oom-tuning.conf
+    state: present
+    reload: true
+
+- name: Override EarlyOOM Service Unit Parameterization
+  ansible.builtin.copy:
+    dest: /etc/default/earlyoom
+    content: >-
+      EARLYOOM_ARGS="-m {{ system_discovery_earlyoom_min_free_pct }},{{ system_discovery_earlyoom_min_free_pct + 2 }}
+      -s {{ (system_discovery_target_zram_mb * 1024 * 5 / 100) | int }}"
+    mode: '0644'
+  register: oom_handler_earlyoom_config

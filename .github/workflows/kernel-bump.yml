@@ -1,0 +1,114 @@
+---
+name: kernel-bump
+
+on:
+  schedule:
+    - cron: 0 6 * * 1
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get kernel version
+        id: kernel
+        run: echo "version=$(uname -r)" >> $GITHUB_OUTPUT
+
+      - name: Read kernel baseline
+        id: baseline
+        run: |
+          if [ -f handoff/kernel-baseline.yml ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "old_kernel=$(grep 'current_kernel:' handoff/kernel-baseline.yml | awk '{print $2}')" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check kernel change
+        id: diff
+        run: |
+          if [ "${{ steps.baseline.outputs.exists }}" = "false" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          elif [ "${{ steps.baseline.outputs.old_kernel }}" != "${{ steps.kernel.outputs.version }}" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Collect kernel features
+        if: steps.diff.outputs.changed == 'true'
+        id: features
+        run: |
+          MGLRU=$(cat /sys/kernel/mm/lru_gen/enabled 2>&1; echo "exit: $?")
+          PSI=$(cat /proc/pressure/memory 2>&1; echo "exit: $?")
+          ZRAM=$(cat /proc/swaps 2>&1; echo "exit: $?")
+          SWAP=$(sysctl vm.swappiness 2>&1; echo "exit: $?")
+          WMSF=$(sysctl vm.watermark_scale_factor 2>&1; echo "exit: $?")
+          VCP=$(sysctl vm.vfs_cache_pressure 2>&1; echo "exit: $?")
+          echo "mglru=${MGLRU}" >> $GITHUB_OUTPUT
+          echo "psi=${PSI}" >> $GITHUB_OUTPUT
+          echo "zram=${ZRAM}" >> $GITHUB_OUTPUT
+          echo "swappiness=${SWAP}" >> $GITHUB_OUTPUT
+          echo "wmsf=${WMSF}" >> $GITHUB_OUTPUT
+          echo "vcp=${VCP}" >> $GITHUB_OUTPUT
+
+      - name: Run formula validation
+        if: steps.diff.outputs.changed == 'true'
+        id: formulas
+        run: |
+          python3 .github/scripts/validate-formulas.py; s=$?
+          echo "exit: ${s}"
+          echo "status=$([ ${s} -eq 0 ] && echo pass || echo fail)" >> $GITHUB_OUTPUT
+
+      - name: Run structure validation
+        if: steps.diff.outputs.changed == 'true'
+        id: structure
+        run: |
+          python3 .github/scripts/verify-structure.py; s=$?
+          echo "exit: ${s}"
+          echo "status=$([ ${s} -eq 0 ] && echo pass || echo fail)" >> $GITHUB_OUTPUT
+
+      - name: Update kernel baseline
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          OLD="${{ steps.baseline.outputs.old_kernel }}"
+          [ -z "$OLD" ] && OLD='unknown'
+          echo "---" > handoff/kernel-baseline.yml
+          echo "current_kernel: ${{ steps.kernel.outputs.version }}" >> handoff/kernel-baseline.yml
+          echo "previous_kernel: ${OLD}" >> handoff/kernel-baseline.yml
+          echo "first_detected: $(date +%Y-%m-%d)" >> handoff/kernel-baseline.yml
+          echo "features:" >> handoff/kernel-baseline.yml
+          echo "  mglru: ${{ steps.features.outputs.mglru }}" >> handoff/kernel-baseline.yml
+          echo "  psi: ${{ steps.features.outputs.psi }}" >> handoff/kernel-baseline.yml
+          echo "  zram: ${{ steps.features.outputs.zram }}" >> handoff/kernel-baseline.yml
+          echo "sysctl_defaults:" >> handoff/kernel-baseline.yml
+          echo "  vm.swappiness: ${{ steps.features.outputs.swappiness }}" >> handoff/kernel-baseline.yml
+          echo "  vm.watermark_scale_factor: ${{ steps.features.outputs.wmsf }}" >> handoff/kernel-baseline.yml
+          echo "  vm.vfs_cache_pressure: ${{ steps.features.outputs.vcp }}" >> handoff/kernel-baseline.yml
+          echo "validation:" >> handoff/kernel-baseline.yml
+          echo "  formulas: ${{ steps.formulas.outputs.status }}" >> handoff/kernel-baseline.yml
+          echo "  structure: ${{ steps.structure.outputs.status }}" >> handoff/kernel-baseline.yml
+
+      - name: Commit kernel baseline
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.name 'github-actions'
+          git config user.email 'github-actions@github.com'
+          git add handoff/kernel-baseline.yml
+          if git diff --cached --quiet; then
+            echo "no changes to commit"
+          else
+            git commit -m "kernel-bump: ${{ steps.kernel.outputs.version }}"
+            git push
+          fi
+
+      - name: No kernel change
+        if: steps.diff.outputs.changed == 'false'
+        run: echo "kernel ${{ steps.kernel.outputs.version }} unchanged from baseline"

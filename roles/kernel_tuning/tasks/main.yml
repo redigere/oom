@@ -1,0 +1,7 @@
+---
+- name: Configure Multi-Gen LRU
+  ansible.builtin.import_tasks: mglru.yml
+- name: Apply Sysctl Parameters
+  ansible.builtin.import_tasks: sysctl.yml
+- name: Configure PSI
+  ansible.builtin.import_tasks: psi.yml

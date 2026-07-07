@@ -1,0 +1,84 @@
+---
+items:
+  - task: verify_make_run_debian_fedora_arch
+    status: completed
+    description: >-
+      CI container-test.yml runs syntax-check and check-mode on Debian,
+      Fedora, Arch containers on every push/PR
+  - task: verify_zram_priority_100
+    status: completed
+    description: >-
+      config-other.yml sets options = pri=100 via zram-generator.conf
+      for RedHat/Archlinux
+  - task: verify_earlyoom_computed_m
+    status: completed
+    description: >-
+      config.yml uses system_discovery_earlyoom_min_free_pct for -m
+      parameter, computed from RAM via continuous formula
+  - task: verify_watermark_scale_factor
+    status: completed
+    description: >-
+      sysctl.yml uses system_discovery_watermark_scale_factor computed
+      from RAM via clamp(ceil(500*8192/RAM), 10, 1000)
+  - task: test_2gb_vm_edge_case
+    status: completed
+    description: >-
+      validate-formulas.py tests 2048 MB reference point: zRAM=2048,
+      wmsf=1000, earlyoom=10, node_heap=1024
+  - task: test_non_grub_boot
+    status: completed
+    description: >-
+      psi.yml stat-checks /etc/default/grub before modifying; skips
+      gracefully if absent (systemd-boot, etc.)
+  - task: test_container_ci_jobs
+    status: completed
+    description: >-
+      container-test.yml runs on Debian (ubuntu:22.04), Fedora, and
+      Archlinux containers with syntax + check-mode
+  - task: extend_setup_apt_setup_pip
+    status: completed
+    description: >-
+      Makefile setup-apt: added autoremove + autoclean. setup-pip: added
+      --upgrade + pip cache purge
+  - task: verify_kernel_bump_patches
+    status: completed
+    description: >-
+      Kernel bump CI created: detects kernel version changes, runs
+      validation, checks features, updates baseline, commits handoff
+      state
+  - task: structure_verify_python_conversion
+    status: completed
+    description: >-
+      verify-structure.sh rewritten to verify-structure.py with no
+      hardcoded role names, handoff lists, or thresholds. All
+      discovery is filesystem-driven.
+  - task: formulas_extreme_edge_hardening
+    status: completed
+    description: >-
+      All formulas guard against zero-RAM division
+      (max(ram_mb,1)). validate-formulas.py tests 0-131072 MB
+      RAM and 1-1024 vCPUs. Reference points include 0 MB (64 KB
+      machine) and 1024-core mainframe.
+  - task: structure_verify_validate_on_all_targets
+    status: pending
+    description: >-
+      Run verify-structure.py on Debian, Fedora, Arch CI
+      containers to validate yamllint parity and Python
+      availability across all three families
+  - task: thermal_throttling_protection
+    status: pending
+    description: >-
+      Design and implement thermal throttling awareness: detect CPU
+      package temperature via /sys/class/thermal or sensors, monitor
+      throttling events (clock modulation, power limit hits), and
+      dynamically reduce build parallelism
+      (CARGO_BUILD_JOBS, MAKEFLAGS, NINJAJOBS) when approaching
+      thermal limits. Potential approaches:
+      (a) ansible role that installs a systemd timer/service to
+          poll temperature and adjust /etc/profile.d/dev-limits.sh
+      (b) kernel_tuning extension to set energy_performance_preference
+          and PL1/PL2 power limits via intel-undervolt or ryzenadj
+      (c) earlyoom-style daemon that SIGSTOPs heavy build processes
+          when throttling is detected
+      Must work on all three families (different thermal interfaces,
+      different power management tools).

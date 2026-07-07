@@ -1,0 +1,29 @@
+---
+- name: Template Configuration Layer Target For Debian Derivatives Framework
+  ansible.builtin.copy:
+    dest: /etc/default/zramswap
+    content: |
+      ALGORITHM=zstd
+      SIZE={{ system_discovery_target_zram_mb }}
+      PRIORITY=100
+    mode: '0644'
+  register: zram_swap_config_debian
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Determine ZRAM Swap Service Registration Status
+  ansible.builtin.systemd:
+    name: zramswap
+  register: zram_swap_service_check
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Restart ZRAM Swap Service and Enable Persistence (Debian)
+  ansible.builtin.systemd:
+    name: zramswap
+    state: restarted
+    enabled: true
+    daemon_reload: true
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - zram_swap_config_debian.changed
+    - zram_swap_service_check.status is defined
+    - zram_swap_service_check.status.LoadState != 'not-found'

@@ -1,0 +1,9 @@
+---
+- name: Swap Off Disk Devices
+  ansible.builtin.import_tasks: swapoff.yml
+- name: Install ZRAM Package
+  ansible.builtin.import_tasks: install.yml
+- name: Configure ZRAM for Debian
+  ansible.builtin.import_tasks: config-debian.yml
+- name: Configure ZRAM for RedHat/Arch
+  ansible.builtin.import_tasks: config-other.yml

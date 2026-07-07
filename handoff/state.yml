@@ -1,0 +1,13 @@
+---
+implementation_status: computed
+hardcoded_values: false
+threshold_branches: false
+fixed_values: false
+machine_range_gb: 2-128
+formula_type: continuous_universal
+cross_role_coupling: system_discovery_prefix
+role_split: single_responsibility_subfiles
+comments: false
+debug_tasks: false
+print_statements: false
+visual_decorations: false

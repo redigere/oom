@@ -1,0 +1,9 @@
+---
+- name: Mask systemd-oomd
+  ansible.builtin.import_tasks: mask-oomd.yml
+- name: Install earlyoom
+  ansible.builtin.import_tasks: install.yml
+- name: Configure OOM Policy
+  ansible.builtin.import_tasks: config.yml
+- name: Manage OOM Service
+  ansible.builtin.import_tasks: service.yml
