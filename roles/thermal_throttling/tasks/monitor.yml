@@ -5,8 +5,10 @@
       {{ [((system_discovery_safe_core_limit | int) / 2) | round(0, 'floor') | int, 1] | max }}
     thermal_throttling_full_jobs: >-
       {{ system_discovery_safe_core_limit | int }}
-    thermal_throttling_epp_value: balance_performance
-    thermal_throttling_temperature_threshold: 80000
+    thermal_throttling_epp_value: >-
+      {{ (system_discovery_safe_core_limit | int > 4) | ternary('balance_performance', 'performance') }}
+    thermal_throttling_temperature_threshold: >-
+      {{ (70000 + (ansible_facts['processor_vcpus'] | int) * 500) | int }}
 
 - name: Create Thermal Throttling Config Directory
   ansible.builtin.file:

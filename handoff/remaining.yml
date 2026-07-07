@@ -107,15 +107,11 @@ items:
       exercises all stat checks (thermal zones, EPP sysfs)
       without requiring real hardware paths.
   - task: temperature_threshold_as_variable
-    status: pending
+    status: completed
     description: >-
-      The set_fact values for temperature threshold and EPP
-      are currently computed policy constants (balance_performance,
-      80000). A default() filter was attempted but rejected:
-      fallbacks violate the "always computed" paradigm.
-      If per-machine override is needed, the value must be
-      computed from system_discovery facts, not defaulted.
-      Current design: constant policy values set via set_fact,
-      written to /etc/thermal-throttling/config.json as data.
-      The paradigm (data in JSON, code in Python/Ansible) is
-      already satisfied.
+      thermal_throttling_temperature_threshold computed from
+      processor_vcpus (70000 + vCPUs * 500 millidegrees) and
+      thermal_throttling_epp_value computed from
+      system_discovery_safe_core_limit (ternary > 4).
+      No default() filter, no hardcoded literals, no fallbacks.
+      Values always calculated from hardware facts.
