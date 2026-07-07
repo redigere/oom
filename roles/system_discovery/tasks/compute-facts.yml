@@ -2,31 +2,31 @@
 - name: Compute System Tuning Variables From Platform Capabilities
   ansible.builtin.set_fact:
     system_discovery_target_zram_mb: >-
-      {{ [[ansible_facts['memtotal_mb'] | int, 16384] | min, 2048] | max }}
+      {{ ([[ansible_facts['memtotal_mb'] | int, 16384] | min, 2048] | max) | int }}
     system_discovery_safe_core_limit: >-
-      {{ [(ansible_facts['processor_vcpus'] | int
+      {{ ([(ansible_facts['processor_vcpus'] | int
         - ((ansible_facts['processor_vcpus'] | int / 8)
-          | round(0, 'ceil') | int)), 1] | max }}
+          | round(0, 'ceil') | int)), 1] | max) | int }}
     system_discovery_watermark_scale_factor: >-
-      {{ [[((500 * 8192 / ([(ansible_facts['memtotal_mb'] | int), 1] | max))
-           | round(0, 'ceil') | int), 10] | max, 1000] | min }}
+      {{ ([[((500 * 8192 / ([(ansible_facts['memtotal_mb'] | int), 1] | max))
+           | round(0, 'ceil') | int), 10] | max, 1000] | min) | int }}
     system_discovery_earlyoom_min_free_pct: >-
       {{ ([[((40000 / ([(ansible_facts['memtotal_mb'] | int), 1] | max))
            | round(0, 'ceil') | int), 3] | max, 10] | min) | int }}
-    system_discovery_dirty_ratio: '5'
-    system_discovery_dirty_background_ratio: '2'
+    system_discovery_dirty_ratio: 5
+    system_discovery_dirty_background_ratio: 2
     system_discovery_min_free_kbytes: >-
-      {{ [((ansible_facts['memtotal_mb'] | int * 1024 / 1000)
-           | round(0, 'ceil') | int), 65536] | max }}
+      {{ ([((ansible_facts['memtotal_mb'] | int * 1024 / 1000)
+           | round(0, 'ceil') | int), 65536] | max) | int }}
     system_discovery_admin_reserve_kbytes: >-
-      {{ [((ansible_facts['memtotal_mb'] | int * 1024 / 4000)
-           | round(0, 'ceil') | int), 4096] | max }}
+      {{ ([((ansible_facts['memtotal_mb'] | int * 1024 / 4000)
+           | round(0, 'ceil') | int), 4096] | max) | int }}
     system_discovery_user_reserve_kbytes: >-
-      {{ [((ansible_facts['memtotal_mb'] | int * 1024 / 2000)
-           | round(0, 'ceil') | int), 16384] | max }}
+      {{ ([((ansible_facts['memtotal_mb'] | int * 1024 / 2000)
+           | round(0, 'ceil') | int), 16384] | max) | int }}
     system_discovery_compaction_proactiveness: >-
-      {{ [[(((20 + (60 * 4096 / ([(ansible_facts['memtotal_mb'] | int), 1] | max))))
-           | round(0, 'ceil') | int), 20] | max, 80] | min }}
+      {{ ([[(((20 + (60 * 4096 / ([(ansible_facts['memtotal_mb'] | int), 1] | max))))
+           | round(0, 'ceil') | int), 20] | max, 80] | min) | int }}
     system_discovery_page_lock_unfairness: '1'
     system_discovery_zone_reclaim_mode: '0'
     system_discovery_reap_mem_on_sigkill: '1'
