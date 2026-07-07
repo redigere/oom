@@ -16,3 +16,29 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y yamllint
       - name: Verify project structure and conventions
         run: python3 .github/scripts/verify-structure.py
+
+  commit-signoff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check Signed-off-by on every commit
+        run: |
+          set -e
+          for sha in $(git rev-list HEAD); do
+            sob=$(git log -1 --format="%(trailers:key=Signed-off-by,valueonly)" "$sha" | head -1)
+            msg=$(git log -1 --format=%s "$sha")
+            if [ -z "$sob" ]; then
+              echo "FAIL commit ${sha:0:7} $msg — missing Signed-off-by"
+              exit 1
+            fi
+          done
+          echo "PASS"
+
+  handoff-split:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check handoff directory structure
+        run: python3 .github/scripts/check-handoff-split.py

@@ -187,8 +187,20 @@ items:
       validation.yml formula_count updated. remaining.yml extended.
       ci.yml workflow names updated for OOM prefix.
   - task: "commit_history: rebase_cleanup"
-    status: pending
+    status: completed
     description: >-
-      Rebase entire history: single-line messages only, add
-      Signed-off-by to all commits, reword 'revert' messages.
-      Dangling side-chain commits dropped.
+      All 30 commits rebased: single-line messages, Signed-off-by
+      on all, 'revert'→'Rework'. Force-pushed to origin/master.
+      Old dangling chain garbage-collected.
+  - task: "ci: commit_signoff_check"
+    status: completed
+    description: >-
+      commit-signoff job in structure-verify.yml checks every commit
+      in the branch has Signed-off-by trailer via git trailers API.
+      Fails on first missing signoff with commit hash and subject.
+  - task: "ci: handoff_split_check"
+    status: completed
+    description: >-
+      handoff-split job in structure-verify.yml enforces: no
+      HANDOFF.md, required YAML files present, each has a
+      corresponding schema in handoff/_schemas/.

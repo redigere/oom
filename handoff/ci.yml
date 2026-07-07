@@ -13,6 +13,8 @@ workflows:
   - name: oom-playbook-structure-verify
     jobs:
       - python_convention_verification
+      - commit_signoff_check
+      - handoff_split_check
   - name: oom-kernel-baseline-bump
     trigger: weekly_schedule
     jobs:
@@ -31,6 +33,8 @@ scripts:
     scope: formula_validation
   - path: .github/scripts/verify-structure.py
     scope: convention_verification
+  - path: .github/scripts/check-handoff-split.py
+    scope: handoff_split_check
   - path: handoff/render.py
     scope: handoff_rendering_and_schema_validation
   - path: handoff/update-baseline.py
