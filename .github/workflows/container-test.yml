@@ -18,6 +18,8 @@ jobs:
         run: apt-get update && apt-get install -y ansible
       - name: Install ansible.posix
         run: ansible-galaxy collection install ansible.posix
+      - name: Validate thermal-monitor.py syntax
+        run: python3 -m py_compile roles/thermal_throttling/files/thermal-monitor.py
       - name: Syntax check
         run: ansible-playbook playbook.yml --syntax-check
       - name: Dry-run check mode
@@ -34,6 +36,8 @@ jobs:
         run: dnf install -y ansible-core
       - name: Install ansible.posix
         run: ansible-galaxy collection install ansible.posix
+      - name: Validate thermal-monitor.py syntax
+        run: python3 -m py_compile roles/thermal_throttling/files/thermal-monitor.py
       - name: Syntax check
         run: ansible-playbook playbook.yml --syntax-check
       - name: Dry-run check mode
@@ -50,6 +54,8 @@ jobs:
         run: pacman -Sy --noconfirm ansible
       - name: Install ansible.posix
         run: ansible-galaxy collection install ansible.posix
+      - name: Validate thermal-monitor.py syntax
+        run: python3 -m py_compile roles/thermal_throttling/files/thermal-monitor.py
       - name: Syntax check
         run: ansible-playbook playbook.yml --syntax-check
       - name: Dry-run check mode
