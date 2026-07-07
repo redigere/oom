@@ -3,7 +3,7 @@
   ansible.builtin.copy:
     dest: /etc/default/zramswap
     content: |
-      ALGORITHM=zstd
+      ALGO=zstd
       SIZE={{ system_discovery_target_zram_mb }}
       PRIORITY=100
     mode: '0644'
@@ -15,6 +15,17 @@
     name: zramswap
   register: zram_swap_service_check
   when: ansible_facts['os_family'] == 'Debian'
+
+- name: Deactivate and Reset ZRAM Device Before Reconfiguration
+  ansible.builtin.shell: |
+    if swapon --show=NAME --noheadings 2>/dev/null | grep -qxF /dev/zram0; then
+      swapoff /dev/zram0
+    fi
+    zramctl -r /dev/zram0
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - zram_swap_config_debian.changed
+  changed_when: true
 
 - name: Restart ZRAM Swap Service and Enable Persistence (Debian)
   ansible.builtin.systemd:

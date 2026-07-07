@@ -12,6 +12,6 @@
     dest: /etc/default/earlyoom
     content: >-
       EARLYOOM_ARGS="-m {{ system_discovery_earlyoom_min_free_pct }},{{ system_discovery_earlyoom_min_free_pct + 2 }}
-      -s {{ (system_discovery_target_zram_mb * 1024 * 5 / 100) | int }}"
+      -S {{ (system_discovery_target_zram_mb * 1024 * 5 / 100) | int }}"
     mode: '0644'
   register: oom_handler_earlyoom_config
