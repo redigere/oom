@@ -84,19 +84,15 @@ items:
       containers to validate yamllint parity and Python
       availability across all three families
   - task: thermal_throttling_protection
-    status: pending
+    status: completed
     description: >-
-      Design and implement thermal throttling awareness: detect CPU
-      package temperature via /sys/class/thermal or sensors, monitor
-      throttling events (clock modulation, power limit hits), and
-      dynamically reduce build parallelism
-      (CARGO_BUILD_JOBS, MAKEFLAGS, NINJAJOBS) when approaching
-      thermal limits. Potential approaches:
-      (a) ansible role that installs a systemd timer/service to
-          poll temperature and adjust /etc/profile.d/dev-limits.sh
-      (b) kernel_tuning extension to set energy_performance_preference
-          and PL1/PL2 power limits via intel-undervolt or ryzenadj
-      (c) earlyoom-style daemon that SIGSTOPs heavy build processes
-          when throttling is detected
-      Must work on all three families (different thermal interfaces,
-      different power management tools).
+      Thermal throttling role implemented: sets
+      energy_performance_preference=balance_performance via sysfs
+      + tmpfiles.d persistence. Deploys thermal-monitor.sh with
+      systemd timer at 2-minute interval. Detects CPU temp from
+      /sys/class/thermal/thermal_zone*/temp. At >= 80C reduces
+      CARGO_BUILD_JOBS, MAKEFLAGS, NINJAJOBS to
+      floor(safe_core_limit/2). Restores full parallelism when
+      temperature drops below threshold. Works on all three
+      families — no external dependencies beyond sysfs and
+      systemd, which are kernel/universe.
