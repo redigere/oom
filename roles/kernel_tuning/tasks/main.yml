@@ -3,7 +3,7 @@
   ansible.builtin.import_tasks: mglru.yml
 - name: Tune VM Sysctl for Responsive Desktop Under Memory Pressure
   ansible.builtin.import_tasks: sysctl.yml
-- name: Configure Transparent HugePages Defrag to Prevent Compaction Freezes
+- name: Configure Transparent HugePages to madvise Mode to Prevent Compaction Stalls
   ansible.builtin.import_tasks: thp.yml
 - name: Set User Slice Memory Limit via Cgroup to Prevent Runaway Allocation
   ansible.builtin.import_tasks: cgroup-memory.yml

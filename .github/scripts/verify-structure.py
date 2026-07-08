@@ -8,6 +8,12 @@ import subprocess
 PROJECT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.chdir(PROJECT)
 
+try:
+    import yaml
+except ImportError:
+    sys.stderr.write("FAIL missing_dependency: PyYAML not installed\n")
+    sys.exit(1)
+
 failures = 0
 
 
@@ -18,6 +24,15 @@ def fail(check_name: str, detail: str = ""):
     if detail:
         msg += f" {detail}"
     print(msg)
+
+
+def safe_read(path):
+    try:
+        with open(path) as f:
+            return f.read()
+    except OSError as e:
+        fail(f"read_error", f"{path}: {e}")
+        return None
 
 
 role_dirs = sorted(glob.glob("roles/*/"))
@@ -35,9 +50,9 @@ for rname in role_names:
     if not os.path.isfile(main_yml):
         fail(f"{rname}_main_exists")
     else:
-        with open(main_yml) as f:
-            if "import_tasks" not in f.read():
-                fail(f"{rname}_main_uses_import")
+        content = safe_read(main_yml)
+        if content and "import_tasks" not in content:
+            fail(f"{rname}_main_uses_import")
 
     task_dir = f"roles/{rname}/tasks"
     if not os.path.isdir(task_dir):
@@ -48,20 +63,22 @@ for rname in role_names:
             if not fn.endswith(".yml"):
                 continue
             fpath = os.path.join(root, fn)
-            with open(fpath) as f:
-                for lineno, line in enumerate(f, 1):
-                    comment_stripped = line.split("#")[0]
+            content = safe_read(fpath)
+            if content is None:
+                continue
+            for lineno, line in enumerate(content.splitlines(), 1):
+                comment_stripped = line.split("#")[0]
 
-                    if re.search(r'ignore_errors:', comment_stripped):
-                        fail(f"{rname}_ignore_errors", f"{fpath}:{lineno}")
-                    if re.search(r'failed_when:', comment_stripped):
-                        fail(f"{rname}_failed_when", f"{fpath}:{lineno}")
+                if re.search(r'ignore_errors:', comment_stripped):
+                    fail(f"{rname}_ignore_errors", f"{fpath}:{lineno}")
+                if re.search(r'failed_when:', comment_stripped):
+                    fail(f"{rname}_failed_when", f"{fpath}:{lineno}")
 
-                    m = re.search(r'register:\s*(\w+)', comment_stripped)
-                    if m:
-                        varname = m.group(1)
-                        if not varname.startswith(f"{rname}_") and not varname.startswith("system_discovery_"):
-                            fail(f"{rname}_register_prefix", f"{varname} at {fpath}:{lineno}")
+                m = re.search(r'register:\s*(\w+)', comment_stripped)
+                if m:
+                    varname = m.group(1)
+                    if not varname.startswith(f"{rname}_") and not varname.startswith("system_discovery_"):
+                        fail(f"{rname}_register_prefix", f"{varname} at {fpath}:{lineno}")
 
 for rname in role_names:
     task_dir = f"roles/{rname}/tasks"
@@ -72,8 +89,9 @@ for rname in role_names:
             if not fn.endswith(".yml"):
                 continue
             fpath = os.path.join(root, fn)
-            with open(fpath) as f:
-                content = f.read()
+            content = safe_read(fpath)
+            if content is None:
+                continue
             if re.search(r"value:\s*'500'.*watermark_scale_factor|watermark_scale_factor.*value:\s*'500'", content):
                 if 'system_discovery_watermark_scale_factor' not in content:
                     fail("kernel_tuning_hardcoded_wmsf", fpath)
@@ -81,11 +99,15 @@ for rname in role_names:
                 if 'system_discovery_earlyoom_min_free_pct' not in content:
                     fail("oom_handler_hardcoded_m", fpath)
 
+makefile_lines = None
 if not os.path.isfile("Makefile"):
     fail("makefile_missing")
 else:
-    with open("Makefile") as f:
-        makefile_lines = f.readlines()
+    content = safe_read("Makefile")
+    if content is None:
+        makefile_lines = []
+    else:
+        makefile_lines = content.splitlines(keepends=True)
 
     for lineno, line in enumerate(makefile_lines, 1):
         stripped = line.strip()
@@ -165,13 +187,14 @@ for hfile in handoff_basenames:
     if not os.path.isfile(fpath):
         fail(f"handoff_{hfile}_missing")
         continue
-    with open(fpath) as f:
-        try:
-            import yaml
-            data = yaml.safe_load(f)
-        except Exception:
-            fail(f"handoff_{hfile}_invalid_yaml")
-            continue
+    content = safe_read(fpath)
+    if content is None:
+        continue
+    try:
+        data = yaml.safe_load(content)
+    except Exception:
+        fail(f"handoff_{hfile}_invalid_yaml")
+        continue
     if data is None:
         fail(f"handoff_{hfile}_empty")
         continue
@@ -182,12 +205,14 @@ for hfile in handoff_basenames:
         fail(f"handoff_{hfile}_empty_dict")
     schema_path = os.path.join(SCHEMAS, hfile)
     if os.path.isfile(schema_path):
-        with open(schema_path) as sf:
-            try:
-                schema = yaml.safe_load(sf)
-            except Exception:
-                fail(f"handoff_{hfile}_invalid_schema")
-                continue
+        content = safe_read(schema_path)
+        if content is None:
+            continue
+        try:
+            schema = yaml.safe_load(content)
+        except Exception:
+            fail(f"handoff_{hfile}_invalid_schema")
+            continue
         if schema and isinstance(schema, dict):
             validate_schema(data, schema)
 
@@ -196,20 +221,20 @@ if os.path.isfile("HANDOFF.md"):
 
 kb_yml = "handoff/kernel-baseline.yml"
 if os.path.isfile(kb_yml):
-    with open(kb_yml) as f:
+    content = safe_read(kb_yml)
+    if content:
         try:
-            import yaml
-            kb = yaml.safe_load(f)
+            kb = yaml.safe_load(content)
         except Exception as e:
             fail("kernel_baseline_parse_error", str(e))
             kb = None
-    if not kb or not isinstance(kb, dict):
-        fail("kernel_baseline_invalid")
+        if not kb or not isinstance(kb, dict):
+            fail("kernel_baseline_invalid")
 
 if not os.path.isfile(".github/workflows/kernel-bump.yml"):
     fail("kernel_bump_workflow")
 
-if os.path.isfile("Makefile"):
+if makefile_lines is not None:
     makefile_text = "".join(makefile_lines)
     if "handoff" in makefile_text:
         if not re.search(r'^handoff:', makefile_text, re.MULTILINE):
@@ -219,9 +244,8 @@ if os.path.isfile("Makefile"):
 
 psi_yml = "roles/kernel_tuning/tasks/psi.yml"
 if os.path.isfile(psi_yml):
-    with open(psi_yml) as f:
-        psi_content = f.read()
-    if "stat" not in psi_content:
+    content = safe_read(psi_yml)
+    if content and "stat" not in content:
         fail("psi_no_bootloader_stat")
 
 for scope, label in [("handoff/", "handoff"), (".", "root")]:

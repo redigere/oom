@@ -8,12 +8,15 @@ os.chdir(PROJECT)
 
 failures = 0
 
+
 def fail(check: str, detail: str = ""):
     global failures
+    failures += 1
     msg = f"FAIL {check}"
     if detail:
         msg += f" {detail}"
-    print(msg)
+    sys.stderr.write(msg + "\n")
+
 
 if os.path.isfile("HANDOFF.md"):
     fail("handoff_md_exists", "handoff must be a directory, not a flat file")
@@ -40,7 +43,7 @@ for hf in handoff_basenames:
         fail("handoff_schema_missing", hf)
 
 if failures:
-    print(f"FAIL {failures} violations")
+    sys.stderr.write(f"FAIL {failures} violations\n")
     sys.exit(1)
 
 print("PASS")

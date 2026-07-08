@@ -4,12 +4,18 @@
     path: /usr/lib/systemd/system/earlyoom.service
   register: oom_handler_earlyoom_service_check
 
-- name: Restart and Enable EarlyOOM Service
+- name: Restart EarlyOOM Service on Config Change
   ansible.builtin.systemd:
     name: earlyoom
     state: restarted
-    enabled: true
     daemon_reload: true
   when:
     - oom_handler_earlyoom_config.changed
     - oom_handler_earlyoom_service_check.stat.exists
+  changed_when: true
+
+- name: Ensure EarlyOOM Service Is Enabled at Boot
+  ansible.builtin.systemd:
+    name: earlyoom
+    enabled: true
+  when: oom_handler_earlyoom_service_check.stat.exists

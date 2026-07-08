@@ -4,12 +4,6 @@
     path: /etc/X11/xorg.conf.d
   register: screen_power_xorg_dir
 
-- name: Check Current DPMS Configuration
-  ansible.builtin.stat:
-    path: /etc/X11/xorg.conf.d/00-disable-dpms.conf
-  register: screen_power_dpms_conf
-  when: screen_power_xorg_dir.stat.exists
-
 - name: Disable X11 DPMS to Prevent Random Screen Blackening
   ansible.builtin.copy:
     dest: /etc/X11/xorg.conf.d/00-disable-dpms.conf

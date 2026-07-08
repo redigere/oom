@@ -6,16 +6,20 @@ setup-apt:
 	sudo apt-get update && sudo apt-get install -y $$(cat requirements/apt.in) && sudo apt-get autoremove -y && sudo apt-get autoclean -y
 
 setup-pip:
-	pip3 install --upgrade $$(cat requirements/pip.in) && pip3 cache purge
+	xargs -a requirements/pip.in -n1 pipx install
 
 setup: setup-apt setup-pip
 	ansible-galaxy collection install ansible.posix
 
-run: setup
-	ANSIBLE_CONFIG=ansible.cfg ansible-playbook playbook.yml
+run: setup .env
+	.env && ANSIBLE_CONFIG=ansible.cfg ansible-playbook playbook.yml
 
 check: setup
-	ANSIBLE_CONFIG=ansible.cfg ansible-playbook playbook.yml --check
+	ANSIBLE_CONFIG=ansible- pass.cfg ansible-playbook playbook.yml --check
+
+
+.env:
+	@echo "Missing .env file. Create it with: echo 'export ANSIBLE_BECOME_PASS=YOUR_PASSWORD' > .env"
 
 status:
 	zramctl 2>&1; echo "exit: $$?"
@@ -33,6 +37,7 @@ clean:
 	sudo systemctl stop earlyoom; sudo systemctl disable earlyoom
 	sudo rm -f /etc/default/earlyoom
 	sudo rm -f /etc/default/zramswap /etc/systemd/zram-generator.conf
+	sudo rm -f /etc/X11/xorg.conf.d/00-disable-dpms.conf
 	sudo rm -f /etc/profile.d/node_heap_limit.sh
 	sudo rm -f /etc/sysctl.d/99-oom-tuning.conf
 	sudo rm -f /etc/tmpfiles.d/mglru.conf

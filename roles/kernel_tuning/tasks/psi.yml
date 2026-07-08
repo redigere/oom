@@ -13,7 +13,18 @@
   register: kernel_tuning_grub_updated
   when: kernel_tuning_grub_config.stat.exists
 
-- name: Update Bootloader to Persist Kernel Parameters
+- name: Update Bootloader to Persist Kernel Parameters (Debian)
   ansible.builtin.command: update-grub
-  when: kernel_tuning_grub_config.stat.exists and kernel_tuning_grub_updated.changed
+  when:
+    - kernel_tuning_grub_config.stat.exists
+    - kernel_tuning_grub_updated.changed
+    - ansible_facts['os_family'] == 'Debian'
+  changed_when: true
+
+- name: Update Bootloader to Persist Kernel Parameters (RedHat)
+  ansible.builtin.command: grub2-mkconfig -o /boot/grub2/grub.cfg
+  when:
+    - kernel_tuning_grub_config.stat.exists
+    - kernel_tuning_grub_updated.changed
+    - ansible_facts['os_family'] == 'RedHat'
   changed_when: true

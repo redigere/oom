@@ -1,4 +1,6 @@
 ---
+- name: Compute Thermal Throttling Variables From Platform Capabilities
+  ansible.builtin.import_tasks: compute-facts.yml
 - name: Configure CPU Frequency Governor and Energy Preference
   ansible.builtin.import_tasks: governor.yml
 - name: Deploy Thermal Monitoring and Dynamic Parallelism Control

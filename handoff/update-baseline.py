@@ -6,7 +6,11 @@ import yaml
 HANDOFF = os.path.dirname(os.path.abspath(__file__))
 BASELINE = os.path.join(HANDOFF, "kernel-baseline.yml")
 
-data = yaml.safe_load(sys.stdin)
+try:
+    data = yaml.safe_load(sys.stdin)
+except Exception as e:
+    sys.stderr.write(f"stdin: yaml parse error - {e}\n")
+    sys.exit(1)
 
 if not isinstance(data, dict):
     sys.stderr.write("stdin: expected YAML dict\n")
@@ -19,8 +23,12 @@ for key in data:
         sys.exit(1)
 
 if os.path.isfile(BASELINE):
-    with open(BASELINE) as f:
-        existing = yaml.safe_load(f)
+    try:
+        with open(BASELINE) as f:
+            existing = yaml.safe_load(f)
+    except Exception as e:
+        sys.stderr.write(f"baseline: read error - {e}\n")
+        sys.exit(1)
     if not isinstance(existing, dict):
         existing = {}
 else:
@@ -32,6 +40,10 @@ for key, val in data.items():
     else:
         existing[key] = val
 
-with open(BASELINE, "w") as f:
-    f.write("---\n")
-    yaml.dump(existing, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+try:
+    with open(BASELINE, "w") as f:
+        f.write("---\n")
+        yaml.dump(existing, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+except OSError as e:
+    sys.stderr.write(f"baseline: write error - {e}\n")
+    sys.exit(1)

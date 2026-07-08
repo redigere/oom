@@ -23,8 +23,6 @@
 - name: Persist Energy Performance Preference Across Reboots via Systemd Tmpfiles
   ansible.builtin.copy:
     dest: /etc/tmpfiles.d/energy_performance_preference.conf
-    content: >-
-      w /sys/devices/system/cpu/cpu0/power/energy_performance_preference
-      - - - - {{ thermal_throttling_epp_value }}
+    content: "w /sys/devices/system/cpu/cpu*/power/energy_performance_preference - - - - {{ thermal_throttling_epp_value }}\n"
     mode: '0644'
   when: thermal_throttling_epp_state.stat.exists

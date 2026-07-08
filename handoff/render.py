@@ -69,8 +69,12 @@ if not handoff_files:
 for fpath in handoff_files:
     basename = os.path.basename(fpath)
     schema_path = os.path.join(SCHEMAS, basename)
-    with open(fpath) as f:
-        raw = f.read()
+    try:
+        with open(fpath) as f:
+            raw = f.read()
+    except OSError as e:
+        fail(f"{basename}: read error - {e}")
+        continue
     try:
         data = yaml.safe_load(raw)
     except Exception as e:
@@ -80,12 +84,15 @@ for fpath in handoff_files:
         fail(f"{basename}: empty")
         continue
     if os.path.isfile(schema_path):
-        with open(schema_path) as sf:
-            try:
+        try:
+            with open(schema_path) as sf:
                 schema = yaml.safe_load(sf)
-            except Exception as e:
-                fail(f"{basename}: invalid schema - {e}")
-                continue
+        except OSError as e:
+            fail(f"{basename}: schema read error - {e}")
+            continue
+        except Exception as e:
+            fail(f"{basename}: invalid schema - {e}")
+            continue
         if schema:
             validate_schema(data, schema)
     sys.stdout.write(basename + "\n")

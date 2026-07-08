@@ -15,25 +15,48 @@ SOB_PATTERN = re.compile(
 
 failures = []
 
+
 def get_commits():
-    result = subprocess.run(
-        ["git", "rev-list", "HEAD"],
-        capture_output=True, text=True, check=True
-    )
-    return result.stdout.strip().splitlines()
+    try:
+        result = subprocess.run(
+            ["git", "rev-list", "HEAD"],
+            capture_output=True, text=True, check=True
+        )
+        return result.stdout.strip().splitlines()
+    except subprocess.CalledProcessError as e:
+        sys.stderr.write(f"git rev-list failed (exit {e.returncode}): {e.stderr.strip()}\n")
+        sys.exit(1)
+    except OSError as e:
+        sys.stderr.write(f"git not found: {e}\n")
+        sys.exit(1)
+
 
 def get_message(sha):
-    result = subprocess.run(
-        ["git", "log", "-1", "--format=%B", sha],
-        capture_output=True, text=True, check=True
-    )
-    return result.stdout
+    try:
+        result = subprocess.run(
+            ["git", "log", "-1", "--format=%B", sha],
+            capture_output=True, text=True, check=True
+        )
+        return result.stdout
+    except subprocess.CalledProcessError as e:
+        sys.stderr.write(f"git log {sha[:7]} failed (exit {e.returncode}): {e.stderr.strip()}\n")
+        sys.exit(1)
+    except OSError as e:
+        sys.stderr.write(f"git not found: {e}\n")
+        sys.exit(1)
+
 
 for sha in get_commits():
     msg = get_message(sha)
     lines = msg.strip().splitlines()
-    subject = lines[0].strip()
+    subject = lines[0].strip() if lines else ""
     trailers = lines[1:] if len(lines) > 1 else []
+
+    if not subject:
+        failures.append(
+            f"commit {sha[:7]}: empty subject"
+        )
+        continue
 
     m = COMMIT_PATTERN.match(subject)
     if not m:

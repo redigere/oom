@@ -19,7 +19,7 @@ verify_structure:
   status: pass
   checker: python
   dynamic_discovery: true
-  handoff_schema_enforced: true
+  handoff_schema_agnostic: true
   checks:
     - role_file_exists
     - main_uses_import
