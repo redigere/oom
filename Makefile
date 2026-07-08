@@ -1,9 +1,7 @@
-# OOM Workstation Tuning — prevents system freeze and out-of-memory kills
-# on Linux developer workstations. See README.md for full documentation.
 .PHONY: setup setup-apt setup-pip run check status handoff clean
 
 setup-apt:
-	sudo apt-get update && sudo apt-get install -y $$(cat requirements/apt.in) && sudo apt-get autoremove -y && sudo apt-get autoclean -y
+	pkexec apt-get update && pkexec apt-get install -y $$(cat requirements/apt.in) && pkexec apt-get autoremove -y && pkexec apt-get autoclean -y
 
 setup-pip:
 	xargs -a requirements/pip.in -n1 pipx install
@@ -11,15 +9,11 @@ setup-pip:
 setup: setup-apt setup-pip
 	ansible-galaxy collection install ansible.posix
 
-run: setup .env
-	.env && ANSIBLE_CONFIG=ansible.cfg ansible-playbook playbook.yml
+run: setup
+	pkexec env ANSIBLE_CONFIG=$(CURDIR)/ansible.cfg ansible-playbook $(CURDIR)/playbook.yml
 
 check: setup
-	ANSIBLE_CONFIG=ansible- pass.cfg ansible-playbook playbook.yml --check
-
-
-.env:
-	@echo "Missing .env file. Create it with: echo 'export ANSIBLE_BECOME_PASS=YOUR_PASSWORD' > .env"
+	pkexec env ANSIBLE_CONFIG=$(CURDIR)/ansible.cfg ansible-playbook $(CURDIR)/playbook.yml --check
 
 status:
 	zramctl 2>&1; echo "exit: $$?"
@@ -34,10 +28,10 @@ handoff:
 	python3 handoff/render.py
 
 clean:
-	sudo systemctl stop earlyoom; sudo systemctl disable earlyoom
-	sudo rm -f /etc/default/earlyoom
-	sudo rm -f /etc/default/zramswap /etc/systemd/zram-generator.conf
-	sudo rm -f /etc/X11/xorg.conf.d/00-disable-dpms.conf
-	sudo rm -f /etc/profile.d/node_heap_limit.sh
-	sudo rm -f /etc/sysctl.d/99-oom-tuning.conf
-	sudo rm -f /etc/tmpfiles.d/mglru.conf
+	pkexec systemctl stop earlyoom; pkexec systemctl disable earlyoom
+	pkexec rm -f /etc/default/earlyoom
+	pkexec rm -f /etc/default/zramswap /etc/systemd/zram-generator.conf
+	pkexec rm -f /etc/X11/xorg.conf.d/00-disable-dpms.conf
+	pkexec rm -f /etc/profile.d/node_heap_limit.sh
+	pkexec rm -f /etc/sysctl.d/99-oom-tuning.conf
+	pkexec rm -f /etc/tmpfiles.d/mglru.conf
