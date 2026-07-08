@@ -23,6 +23,9 @@
     - {key: 'kernel.numa_balancing', value: '0'}
     - {key: 'vm.watermark_boost_factor', value: '0'}
     - {key: 'vm.page-cluster', value: '0'}
+    - {key: 'vm.max_map_count', value: '1048576'}
+    - {key: 'fs.inotify.max_user_watches', value: '524288'}
+    - {key: 'fs.inotify.max_user_instances', value: '1024'}
 
 - name: Check Kernel Support for reap_mem_on_sigkill
   ansible.builtin.stat:
