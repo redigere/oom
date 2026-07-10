@@ -9,3 +9,5 @@
   ansible.builtin.import_tasks: cgroup-memory.yml
 - name: Enable Pressure Stall Information for EarlyOOM Accuracy
   ansible.builtin.import_tasks: psi.yml
+- name: Prioritize Display and Audio Servers via Cgroup Weights
+  ansible.builtin.import_tasks: cgroup-ui-priority.yml

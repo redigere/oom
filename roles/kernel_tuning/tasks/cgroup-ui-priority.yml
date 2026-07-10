@@ -1,0 +1,45 @@
+---
+- name: Create Systemd Drop-In Directory for Display Manager
+  ansible.builtin.file:
+    path: /etc/systemd/system/display-manager.service.d
+    state: directory
+    mode: '0755'
+
+- name: Write Priority Drop-In for Display Manager
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/display-manager.service.d/90-ui-priority.conf
+    content: |
+      [Service]
+      CPUWeight=1000
+      IOWeight=1000
+    mode: '0644'
+  register: kernel_tuning_dm_config
+
+- name: Create Systemd User Drop-In Directories for Audio Servers
+  ansible.builtin.file:
+    path: /etc/systemd/user/{{ item }}.service.d
+    state: directory
+    mode: '0755'
+  loop:
+    - pipewire
+    - pulseaudio
+    - pipewire-pulse
+
+- name: Write Priority Drop-In for Audio Servers
+  ansible.builtin.copy:
+    dest: /etc/systemd/user/{{ item }}.service.d/90-ui-priority.conf
+    content: |
+      [Service]
+      CPUWeight=1000
+      IOWeight=1000
+    mode: '0644'
+  loop:
+    - pipewire
+    - pulseaudio
+    - pipewire-pulse
+  register: kernel_tuning_audio_config
+
+- name: Reload Systemd Daemon for Priority Changes
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: kernel_tuning_dm_config.changed or kernel_tuning_audio_config.changed
