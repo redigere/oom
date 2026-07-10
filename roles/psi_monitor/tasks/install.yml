@@ -1,0 +1,7 @@
+---
+- name: Install PSI Monitor Script
+  ansible.builtin.copy:
+    src: psi-monitor.py
+    dest: /usr/local/bin/psi-monitor.py
+    mode: '0755'
+  register: psi_monitor_script_install

@@ -1,0 +1,35 @@
+---
+- name: Create PSI Monitor Systemd Service
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/psi-monitor.service
+    content: |
+      [Unit]
+      Description=Proactive PSI-based Swap/IO Protection Monitor
+      After=syslog.target
+
+      [Service]
+      Type=simple
+      ExecStart=/usr/local/bin/psi-monitor.py
+      Restart=always
+      RestartSec=10
+
+      [Install]
+      WantedBy=multi-user.target
+    mode: '0644'
+  register: psi_monitor_service_install
+
+- name: Enable and Start PSI Monitor Service
+  ansible.builtin.systemd:
+    name: psi-monitor.service
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: not (ansible_check_mode | bool)
+
+- name: Restart PSI Monitor Service on Update
+  ansible.builtin.systemd:
+    name: psi-monitor.service
+    state: restarted
+  when:
+    - not (ansible_check_mode | bool)
+    - psi_monitor_script_install.changed or psi_monitor_service_install.changed

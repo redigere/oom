@@ -10,3 +10,4 @@
     - dev_throttling
     - thermal_throttling
     - screen_power
+    - psi_monitor

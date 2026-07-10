@@ -43,4 +43,14 @@ Done: All formula constants extracted as named module variables. Reference point
 Sprint 8: Thermal Throttling Protection
 
 Goal: Design and implement thermal throttling awareness for sustained compilation workloads.
-Pending: Needs architecture decision on approach (a/b/c from handoff/remaining.yml) and implementation across all three OS families.
+Done: Thermal throttling role implemented. Zero shell, zero hardcoded values.
+
+Sprint 9: Real-time UI Responsiveness at 98% Saturation
+
+Goal: Prevent mouse stuttering, audio glitches, and UI freezing when memory/IO reaches 98% saturation.
+Done: Implement Cgroup v2 CPU and IO weights for Wayland/Xorg, audio (Pipewire/PulseAudio), and D-Bus. Prioritize these over background/compilation tasks.
+
+Sprint 10: Proactive PSI-based Swap/IO Protection
+
+Goal: Prevent thrashing and complete system lock-up by monitoring Pressure Stall Information (PSI).
+Done: Implemented `psi-monitor` role with a Python daemon that temporarily SIGSTOPs heavy memory/IO hogs when memory PSI exceeds 90%, and SIGCONTs them below 60%, fully respecting the "no-kill" requirement.
