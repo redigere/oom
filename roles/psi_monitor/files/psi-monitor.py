@@ -27,9 +27,10 @@ def get_memory_pressure():
         pass
     return 0.0
 
-def get_largest_process(exclude_pids):
+def get_pids_to_stop(exclude_pids):
     max_rss = 0
     max_pid = -1
+    target_name = ""
     for pid_str in os.listdir("/proc"):
         if not pid_str.isdigit():
             continue
@@ -52,23 +53,50 @@ def get_largest_process(exclude_pids):
                 if rss > max_rss:
                     max_rss = rss
                     max_pid = pid
+                    target_name = name
         except OSError:
             pass
-    return max_pid
+
+    if max_pid == -1:
+        return []
+
+    pids_to_stop = []
+    for pid_str in os.listdir("/proc"):
+        if not pid_str.isdigit():
+            continue
+        pid = int(pid_str)
+        if pid in exclude_pids:
+            continue
+        try:
+            with open(f"/proc/{pid}/status") as f:
+                name = ""
+                uid = 0
+                for line in f:
+                    if line.startswith("Name:"):
+                        name = line.split()[1].strip()
+                    elif line.startswith("Uid:"):
+                        uid = int(line.split()[1])
+            if uid != 0 and name == target_name:
+                pids_to_stop.append(pid)
+        except OSError:
+            pass
+
+    return pids_to_stop
 
 def main():
     stopped_pids = set()
     while True:
         pressure = get_memory_pressure()
         if pressure > STOP_THRESHOLD:
-            pid = get_largest_process(stopped_pids)
-            if pid != -1 and pid != os.getpid():
-                try:
-                    os.kill(pid, signal.SIGSTOP)
-                    stopped_pids.add(pid)
-                    sys.stderr.write(f"psi_monitor: stopped {pid} at {pressure}%\n")
-                except OSError:
-                    pass
+            pids = get_pids_to_stop(stopped_pids)
+            for pid in pids:
+                if pid != os.getpid():
+                    try:
+                        os.kill(pid, signal.SIGSTOP)
+                        stopped_pids.add(pid)
+                        sys.stderr.write(f"psi_monitor: stopped {pid} at {pressure}%\n")
+                    except OSError:
+                        pass
         elif pressure < CONT_THRESHOLD:
             for pid in list(stopped_pids):
                 try:
