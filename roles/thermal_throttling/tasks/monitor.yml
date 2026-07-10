@@ -83,3 +83,4 @@
     name: thermal-monitor.timer
     state: started
     enabled: true
+  when: not (ansible_check_mode | bool)
