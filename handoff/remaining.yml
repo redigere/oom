@@ -294,5 +294,8 @@ items:
     status: completed
     description: >-
       Implement a PSI-based monitor to preemptively SIGSTOP aggressive
-      processes when memory PSI (some) exceeds 90% for sustained periods,
-      preventing thrashing and total lock-up before OOM triggers.
+      processes using instantaneous total memory pressure delta instead of
+      lagging avg10. Identifies the heaviest memory consumer, traverses its
+      process tree up to a boundary shell/daemon to find the root task (e.g.
+      cargo, make), and pauses the entire descendant tree simultaneously.
+      Resumes tree when pressure drops. Stops bumps and glitches before they occur.
