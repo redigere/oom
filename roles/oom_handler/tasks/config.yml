@@ -13,6 +13,6 @@
     content: >-
       EARLYOOM_ARGS="-m {{ system_discovery_earlyoom_min_free_pct }},{{
       (system_discovery_earlyoom_min_free_pct | int) + 2 }}
-      -s 10 -S 15 -i 10 --avoid '(gnome-shell|Xorg|Xwayland|pipewire|pulseaudio|systemd|dbus|earlyoom|agy|antigravity-ide|codium|vscode|code|intellij)'"
+      -s 10 -S 15 -i 10 --avoid '(gnome-shell|Xorg|Xwayland|pipewire|pulseaudio|systemd|dbus|earlyoom|agy|antigravity-ide|codium|vscode|code|intellij)' --dryrun"
     mode: '0644'
   register: oom_handler_earlyoom_config
