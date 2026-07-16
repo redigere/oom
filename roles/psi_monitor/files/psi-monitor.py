@@ -132,8 +132,7 @@ def main():
         LAST_IO_TOTAL, LAST_IO_TIME, io_pressure = get_instant_pressure(
             PSI_IO_PATH, LAST_IO_TOTAL, LAST_IO_TIME)
 
-        combined = max(mem_pressure, io_pressure)
-        if combined > STOP_THRESHOLD:
+        if mem_pressure > STOP_THRESHOLD or io_pressure > IO_STOP_THRESHOLD:
             procs = get_process_info()
             pids = get_tree_pids(procs, stopped_pids)
             for pid in pids:
@@ -147,7 +146,7 @@ def main():
                             f"mem={mem_pressure:.1f}% io={io_pressure:.1f}%\n")
                     except OSError:
                         pass
-        elif combined < CONT_THRESHOLD:
+        elif mem_pressure < CONT_THRESHOLD and io_pressure < IO_CONT_THRESHOLD:
             for pid in list(stopped_pids):
                 try:
                     os.kill(pid, signal.SIGCONT)
