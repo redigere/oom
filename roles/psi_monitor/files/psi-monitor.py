@@ -21,7 +21,8 @@ PROTECTED_NAMES = {
     "phpstorm", "rubymine", "rider", "goland", "eclipse", "netbeans",
     "sublime_text", "gedit", "kate", "mousepad", "leafpad", "xed",
     "obsidian", "discord", "slack", "teams", "zoom", "skype",
-    "gnome-terminal", "konsole", "alacritty", "kitty", "wezterm", "xterm"
+    "gnome-terminal", "konsole", "alacritty", "kitty", "wezterm", "xterm",
+    "agy", "opencode"
 }
 
 LAST_TOTAL = 0
@@ -82,7 +83,7 @@ def get_tree_pids(processes, exclude_pids):
     max_pid = -1
 
     for pid, info in processes.items():
-        if pid in exclude_pids or info["name"] in PROTECTED_NAMES:
+        if pid in exclude_pids or info["name"] in PROTECTED_NAMES or info["name"].endswith("code"):
             continue
         if info["rss"] > max_rss:
             max_rss = info["rss"]
@@ -106,7 +107,7 @@ def get_tree_pids(processes, exclude_pids):
             if b in p_name:
                 is_boundary = True
                 break
-        if is_boundary or p_name in PROTECTED_NAMES:
+        if is_boundary or p_name in PROTECTED_NAMES or p_name.endswith("code"):
             break
         root_pid = ppid
         current = ppid
