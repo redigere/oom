@@ -3,7 +3,7 @@
   ansible.builtin.copy:
     dest: /etc/default/zramswap
     content: |
-      ALGO=zstd
+      ALGO=lz4
       SIZE={{ system_discovery_target_zram_mb }}
       PRIORITY=100
     mode: '0644'
@@ -20,6 +20,7 @@
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
+      systemctl stop zramswap 2>/dev/null
       if swapon --show=NAME --noheadings 2>/dev/null | grep -qxF /dev/zram0; then
         swapoff /dev/zram0
       fi
