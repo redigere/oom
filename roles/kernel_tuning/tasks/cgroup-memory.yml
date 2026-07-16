@@ -16,7 +16,8 @@
     dest: /etc/systemd/system/user.slice.d/90-memory-limit.conf
     content: |
       [Slice]
-      MemoryMax=90%
+      MemoryMax=80%
+      MemoryHigh=70%
       TasksMax=infinity
     mode: '0644'
   register: kernel_tuning_user_slice_config
