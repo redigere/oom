@@ -1,4 +1,13 @@
-.PHONY: setup run check status handoff clean
+.PHONY: help setup run check status handoff clean
+
+help:
+	@echo "help: Show this help message"
+	@echo "setup: Install dependencies"
+	@echo "run: Apply Ansible playbook"
+	@echo "check: Run Ansible playbook in check mode (dry-run)"
+	@echo "status: Print system status and config"
+	@echo "handoff: Render handoff documents"
+	@echo "clean: Remove installed configuration files"
 
 .setup.stamp: requirements/apt.in requirements/pip.in
 	pkexec sh -c 'apt-get update && apt-get install -y $$(cat $(CURDIR)/requirements/apt.in) && apt-get autoremove -y && apt-get autoclean -y'
