@@ -7,7 +7,7 @@
 
 - name: Deploy Thermal Throttling Configuration Data
   ansible.builtin.copy:
-    dest: /etc/thermal-throttling/config.json
+    dest: /etc/thermal-throttling/config.yml
     content: |
       {{ {
         "temperature_threshold_millidegrees": thermal_throttling_temperature_threshold,
@@ -16,7 +16,7 @@
         "energy_performance_preference": thermal_throttling_epp_value,
         "thermal_zone_glob": "/sys/class/thermal/thermal_zone*/temp",
         "profile_d_path": "/etc/profile.d/dev-limits.sh"
-      } | to_nice_json }}
+      } | to_nice_yaml }}
     mode: '0644'
 
 - name: Write Initial Build Parallelism Profile

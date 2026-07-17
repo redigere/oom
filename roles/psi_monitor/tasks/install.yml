@@ -1,4 +1,17 @@
 ---
+- name: Create PSI Monitor Config Directory
+  ansible.builtin.file:
+    path: /etc/psi-monitor
+    state: directory
+    mode: '0755'
+
+- name: Deploy PSI Monitor Config
+  ansible.builtin.copy:
+    src: config.yml
+    dest: /etc/psi-monitor/config.yml
+    mode: '0644'
+  register: psi_monitor_config_install
+
 - name: Install PSI Monitor Script
   ansible.builtin.copy:
     src: psi-monitor.py

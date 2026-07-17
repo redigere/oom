@@ -4,26 +4,21 @@ import os
 import signal
 import sys
 
-PSI_MEMORY_PATH = "/proc/pressure/memory"
-PSI_IO_PATH = "/proc/pressure/io"
-STOP_THRESHOLD = 25.0
-CONT_THRESHOLD = 8.0
-IO_STOP_THRESHOLD = 40.0
-IO_CONT_THRESHOLD = 15.0
-POLL_INTERVAL = 0.3
-PROTECTED_NAMES = {
-    "gnome-shell", "plasma-desktop", "Xorg", "Xwayland", "kwin_wayland",
-    "kwin_x11", "sway", "Hyprland", "pipewire", "pulseaudio", "systemd",
-    "dbus-daemon", "earlyoom", "psi-monitor", "ssh", "sshd", "bash",
-    "gdm3", "gdm", "mutter",
-    "firefox", "chrome", "chromium", "brave", "vivaldi", "opera", "msedge",
-    "code", "vscode", "codium", "idea", "pycharm", "webstorm", "clion",
-    "phpstorm", "rubymine", "rider", "goland", "eclipse", "netbeans",
-    "sublime_text", "gedit", "kate", "mousepad", "leafpad", "xed",
-    "obsidian", "discord", "slack", "teams", "zoom", "skype",
-    "gnome-terminal", "konsole", "alacritty", "kitty", "wezterm", "xterm",
-    "agy", "opencode", "ptyxis", "ptyxis-agent"
-}
+import yaml
+
+CONFIG_PATH = "/etc/psi-monitor/config.yml"
+with open(CONFIG_PATH) as f:
+    config = yaml.safe_load(f)
+
+PSI_MEMORY_PATH = config["psi_memory_path"]
+PSI_IO_PATH = config["psi_io_path"]
+STOP_THRESHOLD = config["stop_threshold"]
+CONT_THRESHOLD = config["cont_threshold"]
+IO_STOP_THRESHOLD = config["io_stop_threshold"]
+IO_CONT_THRESHOLD = config["io_cont_threshold"]
+POLL_INTERVAL = config["poll_interval"]
+PROTECTED_NAMES = set(config["protected_names"])
+BOUNDARY_NAMES = set(config["boundary_names"])
 
 LAST_TOTAL = 0
 LAST_TIME = 0.0
@@ -31,33 +26,23 @@ LAST_IO_TOTAL = 0
 LAST_IO_TIME = 0.0
 
 def get_instant_pressure(path, last_total, last_time):
-    try:
-        with open(path) as f:
-            for line in f:
-                if line.startswith("some"):
-                    parts = line.split()
-                    for p in parts:
-                        if p.startswith("total="):
-                            total = int(p.split("=")[1])
-                            now = time.time()
-                            if last_time == 0.0:
-                                return total, now, 0.0
-                            dt = now - last_time
-                            if dt <= 0:
-                                return total, now, 0.0
-                            delta_us = total - last_total
-                            pressure = (delta_us / 1000000.0) / dt * 100.0
-                            return total, now, min(100.0, max(0.0, pressure))
-    except OSError:
-        pass
+    with open(path) as f:
+        for line in f:
+            if line.startswith("some"):
+                parts = line.split()
+                for p in parts:
+                    if p.startswith("total="):
+                        total = int(p.split("=")[1])
+                        now = time.time()
+                        if last_time == 0.0:
+                            return total, now, 0.0
+                        dt = now - last_time
+                        if dt <= 0:
+                            return total, now, 0.0
+                        delta_us = total - last_total
+                        pressure = (delta_us / 1000000.0) / dt * 100.0
+                        return total, now, min(100.0, max(0.0, pressure))
     return last_total, last_time, 0.0
-
-BOUNDARY_NAMES = {
-    "bash", "zsh", "fish", "sh", "dash", "tmux", "screen", "sshd", "systemd",
-    "gnome-terminal-", "konsole", "alacritty", "kitty", "wezterm", "xterm",
-    "init", "kthreadd", "dbus-daemon", "earlyoom", "psi-monitor", "login",
-    "su", "sudo", "pkexec", "ptyxis", "ptyxis-agent"
-}
 
 def get_process_info():
     processes = {}
@@ -65,17 +50,14 @@ def get_process_info():
         if not pid_str.isdigit():
             continue
         pid = int(pid_str)
-        try:
-            with open(f"/proc/{pid}/stat") as f:
-                parts = f.read().split(") ")
-                if len(parts) >= 2:
-                    name = parts[0].split("(")[1]
-                    ppid = int(parts[1].split()[1])
-                    processes[pid] = {"name": name, "ppid": ppid, "rss": 0}
-            with open(f"/proc/{pid}/statm") as f:
-                processes[pid]["rss"] = int(f.read().split()[1])
-        except OSError:
-            pass
+        with open(f"/proc/{pid}/stat") as f:
+            parts = f.read().split(") ")
+            if len(parts) >= 2:
+                name = parts[0].split("(")[1]
+                ppid = int(parts[1].split()[1])
+                processes[pid] = {"name": name, "ppid": ppid, "rss": 0}
+        with open(f"/proc/{pid}/statm") as f:
+            processes[pid]["rss"] = int(f.read().split()[1])
     return processes
 
 def get_tree_pids(processes, exclude_pids):
@@ -95,24 +77,18 @@ def main():
             pids = get_tree_pids(procs, stopped_pids)
             for pid in pids:
                 if pid != os.getpid():
-                    try:
-                        os.kill(pid, signal.SIGSTOP)
-                        stopped_pids.add(pid)
-                        sys.stderr.write(
-                            f"psi_monitor: stopped {pid} "
-                            f"({procs.get(pid, {}).get('name', 'unknown')}) "
-                            f"mem={mem_pressure:.1f}% io={io_pressure:.1f}%\n")
-                    except OSError:
-                        pass
+                    os.kill(pid, signal.SIGSTOP)
+                    stopped_pids.add(pid)
+                    sys.stderr.write(
+                        f"psi_monitor: stopped {pid} "
+                        f"({procs.get(pid, {}).get('name', 'unknown')}) "
+                        f"mem={mem_pressure:.1f}% io={io_pressure:.1f}%\n")
         elif mem_pressure < CONT_THRESHOLD:
             for pid in list(stopped_pids):
-                try:
-                    os.kill(pid, signal.SIGCONT)
-                    sys.stderr.write(
-                        f"psi_monitor: continued {pid} "
-                        f"mem={mem_pressure:.1f}% io={io_pressure:.1f}%\n")
-                except OSError:
-                    pass
+                os.kill(pid, signal.SIGCONT)
+                sys.stderr.write(
+                    f"psi_monitor: continued {pid} "
+                    f"mem={mem_pressure:.1f}% io={io_pressure:.1f}%\n")
                 stopped_pids.remove(pid)
         sys.stdout.flush()
         sys.stderr.flush()

@@ -32,4 +32,7 @@
     state: restarted
   when:
     - not (ansible_check_mode | bool)
-    - psi_monitor_script_install.changed or psi_monitor_service_install.changed
+    - >-
+      psi_monitor_script_install.changed or
+      psi_monitor_service_install.changed or
+      psi_monitor_config_install.changed
