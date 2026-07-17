@@ -1,13 +1,12 @@
-.PHONY: setup setup-apt setup-pip run check status handoff clean
+.PHONY: setup run check status handoff clean
 
-setup-apt:
+.setup.stamp: requirements/apt.in requirements/pip.in
 	pkexec sh -c 'apt-get update && apt-get install -y $$(cat $(CURDIR)/requirements/apt.in) && apt-get autoremove -y && apt-get autoclean -y'
-
-setup-pip:
 	xargs -a requirements/pip.in -n1 pipx install
-
-setup: setup-apt setup-pip
 	ansible-galaxy collection install ansible.posix
+	touch .setup.stamp
+
+setup: .setup.stamp
 
 run: setup
 	pkexec sh -c 'cd $(CURDIR) && ANSIBLE_CONFIG=ansible.cfg ansible-playbook playbook.yml'
