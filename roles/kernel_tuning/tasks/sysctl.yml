@@ -7,11 +7,9 @@
     state: present
     reload: true
   loop:
-    - {key: 'vm.overcommit_memory', value: '2'}
-    - {key: 'vm.overcommit_ratio', value: '100'}
-    - {key: 'vm.swappiness', value: '60'}
+    - {key: 'vm.swappiness', value: '10'}
     - {key: 'vm.watermark_scale_factor', value: '{{ system_discovery_watermark_scale_factor }}'}
-    - {key: 'vm.vfs_cache_pressure', value: '40'}
+    - {key: 'vm.vfs_cache_pressure', value: '50'}
     - {key: 'vm.dirty_ratio', value: '{{ system_discovery_dirty_ratio }}'}
     - {key: 'vm.dirty_background_ratio', value: '{{ system_discovery_dirty_background_ratio }}'}
     - {key: 'vm.min_free_kbytes', value: '{{ system_discovery_min_free_kbytes }}'}
