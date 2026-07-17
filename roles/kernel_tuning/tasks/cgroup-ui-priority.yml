@@ -42,4 +42,6 @@
 - name: Reload Systemd Daemon for Priority Changes
   ansible.builtin.systemd:
     daemon_reload: true
-  when: kernel_tuning_dm_config.changed or kernel_tuning_audio_config.changed
+  when:
+    - ansible_facts['service_mgr'] == 'systemd'
+    - kernel_tuning_dm_config.changed or kernel_tuning_audio_config.changed
