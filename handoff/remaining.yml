@@ -299,3 +299,10 @@ items:
       process tree up to a boundary shell/daemon to find the root task (e.g.
       cargo, make), and pauses the entire descendant tree simultaneously.
       Resumes tree when pressure drops. Stops bumps and glitches before they occur.
+  - task: "roadmap: sprint11: desktop_app_not_responding"
+    status: completed
+    description: >-
+      Prevent GNOME's "app not responding" dialog from appearing
+      spuriously during I/O and swap pressure by extending Mutter's
+      check-alive-timeout to 60000ms using a system-wide gschema override
+      deployed via the new desktop_responsiveness role.

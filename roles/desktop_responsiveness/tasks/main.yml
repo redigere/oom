@@ -1,0 +1,3 @@
+---
+- name: Configure GNOME Mutter check-alive-timeout
+  ansible.builtin.import_tasks: gnome-timeout.yml

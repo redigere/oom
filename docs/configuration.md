@@ -337,3 +337,7 @@ heap.
 **512 MB floor:** On a 2 GB RAM machine (zRAM = 2 GB), 50% gives Node 1 GB
 max heap, which may trigger OOM within Node for large builds. The floor ensures
 Node always has at least 512 MB regardless of zRAM size.
+
+## GNOME Mutter check-alive-timeout = 60000
+
+The default "Application is not responding" timeout in GNOME is 5 seconds. Under memory pressure, when a single page fault can take seconds due to swap-in, 5 seconds is too short. This causes the "Force Quit" dialog to pop up spuriously for applications that are just waiting for I/O, interrupting the user workflow. Extending the timeout to 60 seconds (60000 ms) prevents these false positives while still allowing genuinely deadlocked applications to be killed.

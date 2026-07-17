@@ -1,0 +1,22 @@
+---
+- name: Check if glib schemas directory exists
+  ansible.builtin.stat:
+    path: /usr/share/glib-2.0/schemas
+  register: desktop_responsiveness_glib_schemas_dir
+
+- name: Deploy GNOME Mutter check-alive-timeout override
+  ansible.builtin.copy:
+    src: 90-oom-playbook-mutter.gschema.override
+    dest: /usr/share/glib-2.0/schemas/90-oom-playbook-mutter.gschema.override
+    owner: root
+    group: root
+    mode: '0644'
+  when:
+    - desktop_responsiveness_glib_schemas_dir.stat.isdir is defined
+    - desktop_responsiveness_glib_schemas_dir.stat.isdir
+  register: desktop_responsiveness_mutter_override
+
+- name: Compile glib schemas
+  ansible.builtin.command: glib-compile-schemas /usr/share/glib-2.0/schemas/
+  when: desktop_responsiveness_mutter_override.changed
+  changed_when: true
