@@ -11,8 +11,8 @@
   ansible.builtin.copy:
     dest: /etc/default/earlyoom
     content: >-
-      EARLYOOM_ARGS="--dryrun -m {{ system_discovery_earlyoom_min_free_pct }},{{
+      EARLYOOM_ARGS="-m {{ system_discovery_earlyoom_min_free_pct }},{{
       (system_discovery_earlyoom_min_free_pct | int) + 2 }}
-      -s 10 -S 15 --avoid '(gnome-shell|Xorg|Xwayland|pipewire|pulseaudio|systemd|dbus|earlyoom|agy|antigravity-ide|codium|vscode|code|intellij|node|python.*|bash|npm|rg)'"
+      -s 10 -S 15 --prefer '(chromium|chrome|electron|skype|slack|teams|discord|spotify|brave|vivaldi|opera)' --avoid '(gnome-shell|Xorg|Xwayland|pipewire|pulseaudio|systemd|dbus|earlyoom|agy|antigravity-ide|codium|vscode|code|intellij|node|python.*|bash|npm|rg)'"
     mode: '0644'
   register: oom_handler_earlyoom_config
