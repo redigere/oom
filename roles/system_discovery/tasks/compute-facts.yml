@@ -2,7 +2,7 @@
 - name: Compute System Tuning Variables From Platform Capabilities
   ansible.builtin.set_fact:
     system_discovery_target_zram_mb: >-
-      {{ ([[ansible_facts['memtotal_mb'] | int, 8192] | min, 2048] | max) | int }}
+      {{ ([[ansible_facts['memtotal_mb'] | int, 32768] | min, 8192] | max) | int }}
     system_discovery_safe_core_limit: >-
       {{ ([(ansible_facts['processor_vcpus'] | int
         - ((ansible_facts['processor_vcpus'] | int / 8)

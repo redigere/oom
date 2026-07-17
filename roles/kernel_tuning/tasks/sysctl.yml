@@ -7,6 +7,8 @@
     state: present
     reload: true
   loop:
+    - {key: 'vm.overcommit_memory', value: '2'}
+    - {key: 'vm.overcommit_ratio', value: '100'}
     - {key: 'vm.swappiness', value: '60'}
     - {key: 'vm.watermark_scale_factor', value: '{{ system_discovery_watermark_scale_factor }}'}
     - {key: 'vm.vfs_cache_pressure', value: '40'}
