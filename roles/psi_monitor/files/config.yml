@@ -33,6 +33,7 @@ protected_names:
   - vivaldi
   - opera
   - msedge
+  - java
   - code
   - vscode
   - codium
