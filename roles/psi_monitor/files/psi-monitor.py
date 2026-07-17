@@ -22,7 +22,7 @@ PROTECTED_NAMES = {
     "sublime_text", "gedit", "kate", "mousepad", "leafpad", "xed",
     "obsidian", "discord", "slack", "teams", "zoom", "skype",
     "gnome-terminal", "konsole", "alacritty", "kitty", "wezterm", "xterm",
-    "agy", "opencode"
+    "agy", "opencode", "ptyxis", "ptyxis-agent"
 }
 
 LAST_TOTAL = 0
@@ -56,7 +56,7 @@ BOUNDARY_NAMES = {
     "bash", "zsh", "fish", "sh", "dash", "tmux", "screen", "sshd", "systemd",
     "gnome-terminal-", "konsole", "alacritty", "kitty", "wezterm", "xterm",
     "init", "kthreadd", "dbus-daemon", "earlyoom", "psi-monitor", "login",
-    "su", "sudo", "pkexec"
+    "su", "sudo", "pkexec", "ptyxis", "ptyxis-agent"
 }
 
 def get_process_info():
@@ -79,50 +79,7 @@ def get_process_info():
     return processes
 
 def get_tree_pids(processes, exclude_pids):
-    max_rss = 0
-    max_pid = -1
-
-    for pid, info in processes.items():
-        if pid in exclude_pids or info["name"] in PROTECTED_NAMES or info["name"].endswith("code"):
-            continue
-        if info["rss"] > max_rss:
-            max_rss = info["rss"]
-            max_pid = pid
-
-    if max_pid == -1:
-        return []
-
-    current = max_pid
-    root_pid = max_pid
-
-    while True:
-        if current not in processes:
-            break
-        ppid = processes[current]["ppid"]
-        if ppid not in processes or ppid == 0 or ppid == 1:
-            break
-        p_name = processes[ppid]["name"]
-        is_boundary = False
-        for b in BOUNDARY_NAMES:
-            if b in p_name:
-                is_boundary = True
-                break
-        if is_boundary or p_name in PROTECTED_NAMES or p_name.endswith("code"):
-            break
-        root_pid = ppid
-        current = ppid
-
-    descendants = [root_pid]
-    added = True
-    while added:
-        added = False
-        for pid, info in processes.items():
-            if info["ppid"] in descendants and pid not in descendants:
-                if pid not in exclude_pids:
-                    descendants.append(pid)
-                    added = True
-
-    return descendants
+    return []
 
 def main():
     global LAST_TOTAL, LAST_TIME, LAST_IO_TOTAL, LAST_IO_TIME
@@ -133,7 +90,7 @@ def main():
         LAST_IO_TOTAL, LAST_IO_TIME, io_pressure = get_instant_pressure(
             PSI_IO_PATH, LAST_IO_TOTAL, LAST_IO_TIME)
 
-        if mem_pressure > STOP_THRESHOLD or io_pressure > IO_STOP_THRESHOLD:
+        if mem_pressure > STOP_THRESHOLD:
             procs = get_process_info()
             pids = get_tree_pids(procs, stopped_pids)
             for pid in pids:
@@ -147,7 +104,7 @@ def main():
                             f"mem={mem_pressure:.1f}% io={io_pressure:.1f}%\n")
                     except OSError:
                         pass
-        elif mem_pressure < CONT_THRESHOLD and io_pressure < IO_CONT_THRESHOLD:
+        elif mem_pressure < CONT_THRESHOLD:
             for pid in list(stopped_pids):
                 try:
                     os.kill(pid, signal.SIGCONT)
