@@ -22,10 +22,13 @@
       set -o pipefail
       systemctl stop zramswap 2>/dev/null
       if swapon --show=NAME --noheadings 2>/dev/null | grep -qxF /dev/zram0; then
-        swapoff /dev/zram0
+        if ! swapoff /dev/zram0 2>/dev/null; then
+          echo "WARNING: swapoff failed (RAM full). Deferring ZRAM reset to next boot." >&2
+          exit 0
+        fi
       fi
       if test -e /dev/zram0; then
-        zramctl -r /dev/zram0
+        zramctl -r /dev/zram0 2>/dev/null || exit 0
       fi
   when:
     - ansible_facts['os_family'] == 'Debian'
