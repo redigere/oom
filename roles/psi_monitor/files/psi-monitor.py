@@ -12,126 +12,128 @@ try:
     with open(CONFIG_PATH) as f:
         config = yaml.safe_load(f)
 except OSError as e:
-    sys.stderr.write(f"psi_monitor: cannot read config {CONFIG_PATH}: {e}\n")
+    sys.stderr.write(f"psi_monitor: cannot read {CONFIG_PATH}: {e}\n")
     sys.exit(1)
 except yaml.YAMLError as e:
-    sys.stderr.write(f"psi_monitor: invalid config {CONFIG_PATH}: {e}\n")
+    sys.stderr.write(f"psi_monitor: invalid yaml {CONFIG_PATH}: {e}\n")
     sys.exit(1)
 
-PSI_MEMORY_PATH = config.get("psi_memory_path", "/proc/pressure/memory")
-STOP_THRESHOLD = config.get("stop_threshold", 25.0)
-CONT_THRESHOLD = config.get("cont_threshold", 8.0)
-POLL_INTERVAL = config.get("poll_interval", 0.3)
+for key in ("psi_memory_path", "stop_threshold", "cont_threshold", "poll_interval"):
+    if key not in config:
+        sys.stderr.write(f"psi_monitor: missing config key {key}\n")
+        sys.exit(1)
 
-LAST_TOTAL = 0
-LAST_TIME = 0.0
+PSI_PATH = config["psi_memory_path"]
+STOP = config["stop_threshold"]
+CONT = config["cont_threshold"]
+INTERVAL = config["poll_interval"]
 
 
-def get_instant_pressure(path, last_total, last_time):
+def read_pressure(path, prev_total, prev_time):
     try:
         with open(path) as f:
             for line in f:
                 if line.startswith("some"):
-                    parts = line.split()
-                    for p in parts:
-                        if p.startswith("total="):
-                            total = int(p.split("=")[1])
+                    for token in line.split():
+                        if token.startswith("total="):
+                            total = int(token.split("=")[1])
                             now = time.time()
-                            if last_time == 0.0:
+                            if prev_time == 0.0:
                                 return total, now, 0.0
-                            dt = now - last_time
+                            dt = now - prev_time
                             if dt <= 0:
                                 return total, now, 0.0
-                            delta_us = total - last_total
-                            pressure = (delta_us / 1000000.0) / dt * 100.0
-                            return total, now, min(100.0, max(0.0, pressure))
+                            pct = ((total - prev_total) / 1_000_000) / dt * 100
+                            return total, now, max(0.0, min(100.0, pct))
     except (OSError, ValueError):
         pass
-    return last_total, last_time, 0.0
+    return prev_total, prev_time, 0.0
 
 
-def get_process_info():
-    processes = {}
+def scan_processes():
+    procs = {}
     try:
-        pids = os.listdir("/proc")
+        entries = os.listdir("/proc")
     except OSError:
-        return processes
-    for pid_str in pids:
-        if not pid_str.isdigit():
+        return procs
+    for name in entries:
+        if not name.isdigit():
             continue
-        pid = int(pid_str)
+        pid = int(name)
         try:
             with open(f"/proc/{pid}/stat") as f:
-                parts = f.read().split(") ")
-                if len(parts) >= 2:
-                    name = parts[0].split("(")[1]
-                    ppid = int(parts[1].split()[1])
-                    processes[pid] = {"name": name, "ppid": ppid, "rss": 0}
+                text = f.read()
+            comm_end = text.rfind(")")
+            if comm_end < 0:
+                continue
+            fields = text[comm_end + 2:].split()
+            ppid = int(fields[1])
             with open(f"/proc/{pid}/statm") as f:
-                processes[pid]["rss"] = int(f.read().split()[1])
+                rss = int(f.read().split()[0])
+            procs[pid] = {"ppid": ppid, "rss": rss}
         except (OSError, ValueError, IndexError):
             pass
-    return processes
+    return procs
 
 
-def get_tree_pids(processes, root_pid):
-    descendants = [root_pid]
-    added = True
-    while added:
-        added = False
-        for pid, info in processes.items():
-            if info["ppid"] in descendants and pid not in descendants:
-                descendants.append(pid)
-                added = True
-    return descendants
+def walk_tree(procs, root):
+    family = [root]
+    grew = True
+    while grew:
+        grew = False
+        for pid, info in procs.items():
+            if info["ppid"] in family and pid not in family:
+                family.append(pid)
+                grew = True
+    return family
 
 
 def main():
-    global LAST_TOTAL, LAST_TIME
-    stopped_pids = set()
+    prev_total = 0
+    prev_time = 0.0
+    frozen = set()
     while True:
         try:
-            LAST_TOTAL, LAST_TIME, mem_pressure = get_instant_pressure(
-                PSI_MEMORY_PATH, LAST_TOTAL, LAST_TIME)
+            prev_total, prev_time, pressure = read_pressure(
+                PSI_PATH, prev_total, prev_time)
 
-            if mem_pressure > STOP_THRESHOLD:
-                procs = get_process_info()
-                max_rss = 0
-                max_pid = -1
+            if pressure > STOP:
+                procs = scan_processes()
+                best_rss = 0
+                best_pid = -1
+                me = os.getpid()
                 for pid, info in procs.items():
-                    if pid == os.getpid() or pid in stopped_pids:
+                    if pid == me or pid in frozen:
                         continue
-                    if info["rss"] > max_rss:
-                        max_rss = info["rss"]
-                        max_pid = pid
-                if max_pid > 1:
-                    tree = get_tree_pids(procs, max_pid)
-                    for pid in tree:
-                        if pid != os.getpid() and pid not in stopped_pids:
+                    if info["rss"] > best_rss:
+                        best_rss = info["rss"]
+                        best_pid = pid
+                if best_pid > 1:
+                    for pid in walk_tree(procs, best_pid):
+                        if pid != me and pid not in frozen:
                             try:
                                 os.kill(pid, signal.SIGSTOP)
-                                stopped_pids.add(pid)
+                                frozen.add(pid)
                                 sys.stderr.write(
                                     f"psi_monitor: stopped {pid} "
-                                    f"({procs.get(pid, {}).get('name', 'unknown')}) "
-                                    f"mem={mem_pressure:.1f}%\n")
+                                    f"mem={pressure:.1f}%\n")
                             except OSError:
                                 pass
-            elif mem_pressure < CONT_THRESHOLD:
-                for pid in list(stopped_pids):
+            elif pressure < CONT:
+                for pid in list(frozen):
                     try:
                         os.kill(pid, signal.SIGCONT)
                         sys.stderr.write(
                             f"psi_monitor: continued {pid} "
-                            f"mem={mem_pressure:.1f}%\n")
+                            f"mem={pressure:.1f}%\n")
                     except OSError:
                         pass
-                    stopped_pids.discard(pid)
+                    frozen.discard(pid)
         except Exception as e:
-            sys.stderr.write(f"psi_monitor: loop error: {e}\n")
+            sys.stderr.write(f"psi_monitor: {e}\n")
         sys.stdout.flush()
         sys.stderr.flush()
-        time.sleep(POLL_INTERVAL)
+        time.sleep(INTERVAL)
 
 
 if __name__ == "__main__":
