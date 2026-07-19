@@ -12,7 +12,7 @@
     state: present
     reload: true
   loop:
-    - {key: 'vm.swappiness', value: '60'}
+    - {key: 'vm.swappiness', value: '100'}
     - {key: 'vm.watermark_scale_factor', value: '{{ system_discovery_watermark_scale_factor }}'}
     - {key: 'vm.vfs_cache_pressure', value: '50'}
     - {key: 'vm.dirty_ratio', value: '{{ system_discovery_dirty_ratio }}'}

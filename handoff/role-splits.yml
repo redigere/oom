@@ -53,15 +53,4 @@ roles:
     description: >-
       Configures GNOME mutter check-alive-timeout to 60 seconds
       via gsettings override to prevent spurious "app not responding" dialogs.
-  - name: psi_monitor
-    subfiles:
-      - install.yml
-      - service.yml
-    main_imports: 2
-    status: implemented
-    description: >-
-      Monitors /proc/pressure/memory and preemptively SIGSTOPs
-      the most aggressive memory hog when PSI avg10 exceeds
-      threshold. Resumes processes with SIGCONT when pressure
-      drops. No process is excluded from being stopped.
-total_subfiles: 23
+total_subfiles: 21

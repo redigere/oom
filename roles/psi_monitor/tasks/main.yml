@@ -1,5 +1,0 @@
----
-- name: Install PSI Monitor Script
-  ansible.builtin.import_tasks: install.yml
-- name: Configure and Start PSI Monitor Service
-  ansible.builtin.import_tasks: service.yml
