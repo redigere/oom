@@ -1,0 +1,6 @@
+---
+psi_memory_path: /proc/pressure/memory
+psi_io_path: /proc/pressure/io
+stop_threshold: 25.0
+cont_threshold: 8.0
+poll_interval: 0.3

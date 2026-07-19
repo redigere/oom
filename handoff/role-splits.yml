@@ -12,8 +12,7 @@ roles:
       - thp.yml
       - cgroup-memory.yml
       - psi.yml
-      - cgroup-ui-priority.yml
-    main_imports: 6
+    main_imports: 5
   - name: zram_swap
     subfiles:
       - swapoff.yml
@@ -54,4 +53,15 @@ roles:
     description: >-
       Configures GNOME mutter check-alive-timeout to 60 seconds
       via gsettings override to prevent spurious "app not responding" dialogs.
-total_subfiles: 21
+  - name: psi_monitor
+    subfiles:
+      - install.yml
+      - service.yml
+    main_imports: 2
+    status: implemented
+    description: >-
+      Monitors /proc/pressure/memory and preemptively SIGSTOPs
+      the most aggressive memory hog when PSI avg10 exceeds
+      threshold. Resumes processes with SIGCONT when pressure
+      drops. No process is excluded from being stopped.
+total_subfiles: 23
