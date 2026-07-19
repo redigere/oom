@@ -46,17 +46,6 @@ roles:
       every 2 minutes. Reduces build parallelism when
       CPU temp >= threshold, restores when cool. All
       tunable parameters in JSON config file only.
-  - name: psi_monitor
-    subfiles:
-      - install.yml
-      - service.yml
-    main_imports: 2
-    status: implemented
-    description: >-
-      Monitors /proc/pressure/memory and preemptively SIGSTOPs
-      the most aggressive memory hogs if PSI avg10 exceeds 90%.
-      Resumes processes with SIGCONT when pressure drops below 60%.
-      Prevents freezing without killing any processes.
   - name: desktop_responsiveness
     subfiles:
       - gnome-timeout.yml
@@ -65,4 +54,4 @@ roles:
     description: >-
       Configures GNOME mutter check-alive-timeout to 60 seconds
       via gsettings override to prevent spurious "app not responding" dialogs.
-total_subfiles: 23
+total_subfiles: 21
