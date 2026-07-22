@@ -16,29 +16,51 @@
   register: zram_swap_service_check
   when: ansible_facts['os_family'] == 'Debian'
 
-- name: Reset ZRAM Device Before Applying New Configuration
-  ansible.builtin.shell:
-    cmd: |
-      set -o pipefail
-      systemctl stop zramswap 2>/dev/null
-      if swapon --show=NAME --noheadings 2>/dev/null | grep -qxF /dev/zram0; then
-        if ! swapoff /dev/zram0 2>/dev/null; then
-          echo "WARNING: swapoff failed (RAM full). Deferring ZRAM reset to next boot." >&2
-          exit 0
-        fi
-      fi
-      if test -e /dev/zram0; then
-        zramctl -r /dev/zram0 2>/dev/null || exit 0
-      fi
+- name: Stop ZRAM Swap Service Before Device Reset
+  ansible.builtin.systemd:
+    name: zramswap
+    state: stopped
   when:
     - ansible_facts['os_family'] == 'Debian'
     - zram_swap_config_debian.changed
+    - zram_swap_service_check.stat.exists
+
+- name: Check If ZRAM Device Is Active
+  ansible.builtin.command: swapon --show=NAME --noheadings
+  register: zram_swap_active_devices
+  changed_when: false
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - zram_swap_config_debian.changed
+
+- name: Deactivate ZRAM Swap Device
+  ansible.builtin.command: swapoff /dev/zram0
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - zram_swap_config_debian.changed
+    - "'/dev/zram0' in zram_swap_active_devices.stdout_lines"
   changed_when: true
 
-- name: Restart ZRAM Swap Service on Config Change (Debian)
+- name: Check If ZRAM Device File Exists
+  ansible.builtin.stat:
+    path: /dev/zram0
+  register: zram_swap_device_exists
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - zram_swap_config_debian.changed
+
+- name: Remove ZRAM Device
+  ansible.builtin.command: zramctl -r /dev/zram0
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - zram_swap_config_debian.changed
+    - zram_swap_device_exists.stat.exists
+  changed_when: true
+
+- name: Start ZRAM Swap Service on Config Change (Debian)
   ansible.builtin.systemd:
     name: zramswap
-    state: restarted
+    state: started
     daemon_reload: true
   when:
     - ansible_facts['os_family'] == 'Debian'

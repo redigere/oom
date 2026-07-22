@@ -13,11 +13,14 @@
     content: >-
       EARLYOOM_ARGS="-m {{ system_discovery_earlyoom_min_free_pct }},{{
       (system_discovery_earlyoom_min_free_pct | int) + 2 }}
-      -s 10 -S 15 -p
-      --prefer '(rustc|cargo|cc1plus|clang|make|ninja|ld|lld|mold|gold)'
-      --avoid '(java|gnome-shell|Xorg|Xwayland|pipewire|pulseaudio|systemd|dbus|{{
-      "" }}earlyoom|agy|antigravity-ide|codium|vscode|code|intellij|node|python.*|{{
-      "" }}bash|npm|rg|chromium|chrome|electron|skype|slack|teams|discord|spotify|{{
-      "" }}brave|vivaldi|opera|firefox)'"
+      -S 750 -p
+      --prefer '(rustc|cargo|cc1plus|clang|make|ninja|ld|lld|mold|gold|gcc|g\+\+
+      |javac|kotlinc|gradle|maven|bazel|bun|deno|go|node|npm|pnpm|yarn|pip|python
+      |ruby|perl|docker|podman|containerd|postgres|mysql|redis|mongod|webpack|vite
+      |esbuild|ts-node|java)'
+      --avoid '(gnome-shell|Xorg|Xwayland|pipewire|pulseaudio|systemd|dbus
+      |earlyoom|bash|codium|vscode|code|intellij|idea|pycharm|android-studio
+      |agy|antigravity-ide|brave|vivaldi|opera|firefox|chromium|chrome|electron
+      |skype|slack|teams|discord|spotify)'"
     mode: '0644'
   register: oom_handler_earlyoom_config

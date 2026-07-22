@@ -14,7 +14,9 @@
         "full_parallelism_jobs": thermal_throttling_full_jobs,
         "reduced_parallelism_jobs": thermal_throttling_reduced_jobs,
         "energy_performance_preference": thermal_throttling_epp_value,
+        "energy_performance_preference_idle": "power",
         "thermal_zone_glob": "/sys/class/thermal/thermal_zone*/temp",
+        "epp_sysfs_glob": "/sys/devices/system/cpu/cpu*/power/energy_performance_preference",
         "profile_d_path": "/etc/profile.d/dev-limits.sh"
       } | to_nice_yaml }}
     mode: '0644'

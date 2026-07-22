@@ -35,5 +35,5 @@ status:
 handoff:
 	python3 handoff/render.py
 
-clean:
-	pkexec sh -c 'systemctl stop earlyoom; systemctl disable earlyoom; systemctl stop psi-monitor; systemctl disable psi-monitor; rm -f /etc/default/earlyoom /etc/default/zramswap /etc/systemd/zram-generator.conf /etc/X11/xorg.conf.d/00-disable-dpms.conf /etc/profile.d/node_heap_limit.sh /etc/sysctl.d/99-oom-tuning.conf /etc/tmpfiles.d/mglru.conf /usr/local/bin/psi-monitor.py /etc/psi-monitor/config.yml /etc/systemd/system/psi-monitor.service'
+clean: setup
+	pkexec sh -c 'cd $(CURDIR) && ANSIBLE_CONFIG=ansible.cfg ansible-playbook restore.yml'

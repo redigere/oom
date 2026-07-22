@@ -18,6 +18,9 @@ full_jobs = config["full_parallelism_jobs"]
 reduced_jobs = config["reduced_parallelism_jobs"]
 zone_glob = config["thermal_zone_glob"]
 profile_path = config["profile_d_path"]
+epp_idle = config["energy_performance_preference_idle"]
+epp_hot = config["energy_performance_preference"]
+epp_sysfs_glob = config["epp_sysfs_glob"]
 
 is_throttled = False
 with open(profile_path) as pf:
@@ -30,7 +33,7 @@ hot = False
 for zone_path in sorted(glob.glob(zone_glob)):
     zone_dir = os.path.dirname(zone_path)
     zone_type_path = os.path.join(zone_dir, "type")
-    
+
     with open(zone_type_path) as tf:
         zone_type = tf.read().strip()
     if zone_type in IGNORED_ZONE_TYPES:
@@ -54,6 +57,9 @@ if hot and not is_throttled:
             "export {}\n".format(reduced_jobs, reduced_jobs, reduced_jobs, THROTTLED_MARKER)
         )
     os.chmod(profile_path, 0o644)
+    for epp_path in sorted(glob.glob(epp_sysfs_glob)):
+        with open(epp_path, "w") as ef:
+            ef.write(epp_idle)
 
 if not hot and is_throttled:
     with open(profile_path, "w") as pf:
@@ -63,3 +69,6 @@ if not hot and is_throttled:
             "export NINJAJOBS={}\n".format(full_jobs, full_jobs, full_jobs)
         )
     os.chmod(profile_path, 0o644)
+    for epp_path in sorted(glob.glob(epp_sysfs_glob)):
+        with open(epp_path, "w") as ef:
+            ef.write(epp_hot)

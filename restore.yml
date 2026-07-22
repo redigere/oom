@@ -1,0 +1,496 @@
+---
+- name: Restore System to Pre-Tuning State
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Check EarlyOOM Service Registration
+      ansible.builtin.systemd:
+        name: earlyoom
+      register: restore_earlyoom_status
+      failed_when: false
+
+    - name: Stop and Disable EarlyOOM Service
+      ansible.builtin.systemd:
+        name: earlyoom
+        state: stopped
+        enabled: false
+      when: restore_earlyoom_status.status.LoadState != 'not-found'
+
+    - name: Check Thermal Monitor Timer Registration
+      ansible.builtin.systemd:
+        name: thermal-monitor.timer
+      register: restore_thermal_timer_status
+      failed_when: false
+
+    - name: Stop and Disable Thermal Monitor Timer
+      ansible.builtin.systemd:
+        name: thermal-monitor.timer
+        state: stopped
+        enabled: false
+      when: restore_thermal_timer_status.status.LoadState != 'not-found'
+
+    - name: Check ZRAM Swap Service Registration (Debian)
+      ansible.builtin.systemd:
+        name: zramswap
+      register: restore_zramswap_status
+      failed_when: false
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Stop and Disable ZRAM Swap Service (Debian)
+      ansible.builtin.systemd:
+        name: zramswap
+        state: stopped
+        enabled: false
+      when:
+        - ansible_facts['os_family'] == 'Debian'
+        - restore_zramswap_status.status.LoadState is defined
+        - restore_zramswap_status.status.LoadState != 'not-found'
+
+    - name: Check ZRAM Generator Service Registration (RedHat/Arch)
+      ansible.builtin.systemd:
+        name: systemd-zram-setup@zram0
+      register: restore_zram_gen_status
+      failed_when: false
+      when: ansible_facts['os_family'] in ['RedHat', 'Archlinux']
+
+    - name: Stop and Disable ZRAM Generator Service (RedHat/Arch)
+      ansible.builtin.systemd:
+        name: systemd-zram-setup@zram0
+        state: stopped
+        enabled: false
+      when:
+        - ansible_facts['os_family'] in ['RedHat', 'Archlinux']
+        - restore_zram_gen_status.status.LoadState is defined
+        - restore_zram_gen_status.status.LoadState != 'not-found'
+
+    - name: Check If ZRAM Device Exists
+      ansible.builtin.stat:
+        path: /dev/zram0
+      register: restore_zram0_state
+
+    - name: Reset ZRAM Device and Restore Disk Swap
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          if swapon --show=NAME --noheadings 2>/dev/null | grep -qxF /dev/zram0; then
+            swapoff /dev/zram0 2>/dev/null || true
+          fi
+          if test -e /dev/zram0; then
+            zramctl -r /dev/zram0 2>/dev/null || true
+          fi
+          systemctl daemon-reload
+      changed_when: true
+      when: restore_zram0_state.stat.exists
+
+    - name: Check For Commented Swap Entries in /etc/fstab
+      ansible.builtin.command:
+        cmd: grep -c "^# Removed by Performance Automation Tuning Framework:" /etc/fstab
+      register: restore_fstab_count
+      changed_when: false
+
+    - name: Restore Disk Swap Entries in /etc/fstab
+      ansible.builtin.replace:
+        path: /etc/fstab
+        regexp: '^# Removed by Performance Automation Tuning Framework: (.*)$'
+        replace: '\1'
+      when: restore_fstab_count.stdout | int > 0
+
+    - name: Enable All Restored Swap Entries
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          while IFS= read -r line; do
+            dev=$(echo "$line" | awk '{print $1}')
+            if test -b "$dev"; then
+              swapon "$dev" 2>/dev/null || true
+            fi
+          done < <(awk '$3 == "swap" && $0 !~ /^#/ {print}' /etc/fstab)
+      changed_when: true
+      when: restore_fstab_count.stdout | int > 0
+
+    - name: Find and Unmask systemd-oomd Unit Files
+      ansible.builtin.find:
+        paths:
+          - /etc/systemd/system
+        patterns: "systemd-oomd*"
+      register: restore_oomd_units
+
+    - name: Remove systemd-oomd Mask Symlinks
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ restore_oomd_units.files }}"
+      loop_control:
+        label: "{{ item.path | basename }}"
+      when: restore_oomd_units.files | length > 0
+
+    - name: Remove EarlyOOM Configuration
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/default/earlyoom
+        - /etc/default/zramswap
+        - /etc/systemd/zram-generator.conf
+
+    - name: Remove Node Heap Limit Profile Script
+      ansible.builtin.file:
+        path: /etc/profile.d/node_heap_limit.sh
+        state: absent
+
+    - name: Remove Build Parallelism Profile Script
+      ansible.builtin.file:
+        path: /etc/profile.d/dev-limits.sh
+        state: absent
+
+    - name: Remove Thermal Monitor Files
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /usr/local/bin/thermal-monitor.py
+        - /etc/systemd/system/thermal-monitor.service
+        - /etc/systemd/system/thermal-monitor.timer
+        - /etc/thermal-throttling
+
+    - name: Remove Sysctl Tuning Configuration
+      ansible.builtin.file:
+        path: /etc/sysctl.d/99-oom-tuning.conf
+        state: absent
+
+    - name: Restore Default vm.swappiness
+      ansible.posix.sysctl:
+        name: vm.swappiness
+        value: '60'
+        state: present
+        reload: true
+        sysctl_file: /etc/sysctl.d/99-defaults.conf
+
+    - name: Restore Default vm.watermark_scale_factor
+      ansible.posix.sysctl:
+        name: vm.watermark_scale_factor
+        value: '10'
+        state: present
+        reload: true
+        sysctl_file: /etc/sysctl.d/99-defaults.conf
+
+    - name: Restore Default vm.vfs_cache_pressure
+      ansible.posix.sysctl:
+        name: vm.vfs_cache_pressure
+        value: '100'
+        state: present
+        reload: true
+        sysctl_file: /etc/sysctl.d/99-defaults.conf
+
+    - name: Restore Default vm.dirty_ratio
+      ansible.posix.sysctl:
+        name: vm.dirty_ratio
+        value: '20'
+        state: present
+        reload: true
+        sysctl_file: /etc/sysctl.d/99-defaults.conf
+
+    - name: Restore Default vm.dirty_background_ratio
+      ansible.posix.sysctl:
+        name: vm.dirty_background_ratio
+        value: '10'
+        state: present
+        reload: true
+        sysctl_file: /etc/sysctl.d/99-defaults.conf
+
+    - name: Restore Default vm.compaction_proactiveness
+      ansible.posix.sysctl:
+        name: vm.compaction_proactiveness
+        value: '20'
+        state: present
+        reload: true
+        sysctl_file: /etc/sysctl.d/99-defaults.conf
+
+    - name: Restore Default vm.zone_reclaim_mode
+      ansible.posix.sysctl:
+        name: vm.zone_reclaim_mode
+        value: '0'
+        state: present
+        reload: true
+        sysctl_file: /etc/sysctl.d/99-defaults.conf
+
+    - name: Restore Default vm.stat_interval
+      ansible.posix.sysctl:
+        name: vm.stat_interval
+        value: '1'
+        state: present
+        reload: true
+        sysctl_file: /etc/sysctl.d/99-defaults.conf
+
+    - name: Restore Default kernel.sched_autogroup_enabled
+      ansible.posix.sysctl:
+        name: kernel.sched_autogroup_enabled
+        value: '1'
+        state: present
+        reload: true
+        sysctl_file: /etc/sysctl.d/99-defaults.conf
+
+    - name: Restore Default kernel.numa_balancing
+      ansible.posix.sysctl:
+        name: kernel.numa_balancing
+        value: '1'
+        state: present
+        reload: true
+        sysctl_file: /etc/sysctl.d/99-defaults.conf
+
+    - name: Restore Default vm.watermark_boost_factor
+      ansible.posix.sysctl:
+        name: vm.watermark_boost_factor
+        value: '15000'
+        state: present
+        reload: true
+        sysctl_file: /etc/sysctl.d/99-defaults.conf
+
+    - name: Restore Default vm.page-cluster
+      ansible.posix.sysctl:
+        name: vm.page-cluster
+        value: '3'
+        state: present
+        reload: true
+        sysctl_file: /etc/sysctl.d/99-defaults.conf
+
+    - name: Restore Default vm.max_map_count
+      ansible.posix.sysctl:
+        name: vm.max_map_count
+        value: '65530'
+        state: present
+        reload: true
+        sysctl_file: /etc/sysctl.d/99-defaults.conf
+
+    - name: Restore Default fs.inotify.max_user_watches
+      ansible.posix.sysctl:
+        name: fs.inotify.max_user_watches
+        value: '8192'
+        state: present
+        reload: true
+        sysctl_file: /etc/sysctl.d/99-defaults.conf
+
+    - name: Restore Default fs.inotify.max_user_instances
+      ansible.posix.sysctl:
+        name: fs.inotify.max_user_instances
+        value: '128'
+        state: present
+        reload: true
+        sysctl_file: /etc/sysctl.d/99-defaults.conf
+
+    - name: Restore Default kernel.yama.ptrace_scope
+      ansible.posix.sysctl:
+        name: kernel.yama.ptrace_scope
+        value: '0'
+        state: present
+        reload: true
+        sysctl_file: /etc/sysctl.d/99-defaults.conf
+
+    - name: Restore Default vm.mmap_min_addr
+      ansible.posix.sysctl:
+        name: vm.mmap_min_addr
+        value: '65536'
+        state: present
+        reload: true
+        sysctl_file: /etc/sysctl.d/99-defaults.conf
+
+    - name: Restore Default kernel.kptr_restrict
+      ansible.posix.sysctl:
+        name: kernel.kptr_restrict
+        value: '0'
+        state: present
+        reload: true
+        sysctl_file: /etc/sysctl.d/99-defaults.conf
+
+    - name: Restore Default kernel.dmesg_restrict
+      ansible.posix.sysctl:
+        name: kernel.dmesg_restrict
+        value: '0'
+        state: present
+        reload: true
+        sysctl_file: /etc/sysctl.d/99-defaults.conf
+
+    - name: Remove Temporary Sysctl Defaults File
+      ansible.builtin.file:
+        path: /etc/sysctl.d/99-defaults.conf
+        state: absent
+
+    - name: Reload Kernel Parameters
+      ansible.builtin.command: sysctl --system
+      changed_when: true
+
+    - name: Check Kernel Support for reap_mem_on_sigkill
+      ansible.builtin.stat:
+        path: /proc/sys/vm/reap_mem_on_sigkill
+      register: restore_reap_check
+
+    - name: Restore reap_mem_on_sigkill Default
+      ansible.posix.sysctl:
+        name: vm.reap_mem_on_sigkill
+        value: '0'
+        sysctl_file: /etc/sysctl.d/99-defaults-conditional.conf
+        reload: true
+        state: present
+      when: restore_reap_check.stat.exists
+
+    - name: Check Kernel Support for oom_dump_tasks
+      ansible.builtin.stat:
+        path: /proc/sys/vm/oom_dump_tasks
+      register: restore_oomdump_check
+
+    - name: Restore oom_dump_tasks Default
+      ansible.posix.sysctl:
+        name: vm.oom_dump_tasks
+        value: '1'
+        sysctl_file: /etc/sysctl.d/99-defaults-conditional.conf
+        reload: true
+        state: present
+      when: restore_oomdump_check.stat.exists
+
+    - name: Check For Conditional Sysctl Defaults File
+      ansible.builtin.stat:
+        path: /etc/sysctl.d/99-defaults-conditional.conf
+      register: restore_conditional_sysctl
+
+    - name: Remove Conditional Sysctl Defaults File
+      ansible.builtin.file:
+        path: /etc/sysctl.d/99-defaults-conditional.conf
+        state: absent
+      when: restore_conditional_sysctl.stat.exists
+
+    - name: Remove MGLRU Persistence Configuration
+      ansible.builtin.file:
+        path: /etc/tmpfiles.d/mglru.conf
+        state: absent
+
+    - name: Check MGLRU Sysfs Path
+      ansible.builtin.stat:
+        path: /sys/kernel/mm/lru_gen/enabled
+      register: restore_mglru_state
+
+    - name: Restore MGLRU to Default
+      ansible.builtin.shell: echo 0 > /sys/kernel/mm/lru_gen/enabled
+      when: restore_mglru_state.stat.exists
+      changed_when: true
+
+    - name: Remove THP Defrag Persistence Configuration
+      ansible.builtin.file:
+        path: /etc/tmpfiles.d/thp_defrag.conf
+        state: absent
+
+    - name: Check THP Defrag Sysfs Path
+      ansible.builtin.stat:
+        path: /sys/kernel/mm/transparent_hugepage/defrag
+      register: restore_thp_defrag_state
+
+    - name: Restore THP Defrag to Default
+      ansible.builtin.shell: echo always > /sys/kernel/mm/transparent_hugepage/defrag
+      when: restore_thp_defrag_state.stat.exists
+      changed_when: true
+
+    - name: Remove THP Enabled Persistence Configuration
+      ansible.builtin.file:
+        path: /etc/tmpfiles.d/thp_enabled.conf
+        state: absent
+
+    - name: Check THP Enabled Sysfs Path
+      ansible.builtin.stat:
+        path: /sys/kernel/mm/transparent_hugepage/enabled
+      register: restore_thp_enabled_state
+
+    - name: Restore THP Enabled to Default
+      ansible.builtin.shell: echo always > /sys/kernel/mm/transparent_hugepage/enabled
+      when: restore_thp_enabled_state.stat.exists
+      changed_when: true
+
+    - name: Remove Energy Performance Preference Persistence
+      ansible.builtin.file:
+        path: /etc/tmpfiles.d/energy_performance_preference.conf
+        state: absent
+
+    - name: Remove Systemd Drop-In for User Slice
+      ansible.builtin.file:
+        path: /etc/systemd/system/user.slice.d
+        state: absent
+
+    - name: Remove Systemd Drop-In for Display Manager
+      ansible.builtin.file:
+        path: /etc/systemd/system/display-manager.service.d
+        state: absent
+
+    - name: Remove Systemd User Drop-Ins for Audio Servers
+      ansible.builtin.file:
+        path: "/etc/systemd/user/{{ item }}.service.d"
+        state: absent
+      loop:
+        - pipewire
+        - pulseaudio
+        - pipewire-pulse
+
+    - name: Remove X11 DPMS Disable Configuration
+      ansible.builtin.file:
+        path: /etc/X11/xorg.conf.d/00-disable-dpms.conf
+        state: absent
+
+    - name: Check GNOME Mutter Override File
+      ansible.builtin.stat:
+        path: /usr/share/glib-2.0/schemas/90-oom-playbook-mutter.gschema.override
+      register: restore_mutter_override
+
+    - name: Remove GNOME Mutter Timeout Override
+      ansible.builtin.file:
+        path: /usr/share/glib-2.0/schemas/90-oom-playbook-mutter.gschema.override
+        state: absent
+      when: restore_mutter_override.stat.exists
+
+    - name: Recompile GLib Schemas After Override Removal
+      ansible.builtin.command: glib-compile-schemas /usr/share/glib-2.0/schemas/
+      when: restore_mutter_override.stat.exists
+      changed_when: true
+
+    - name: Check GRUB Configuration File
+      ansible.builtin.stat:
+        path: /etc/default/grub
+      register: restore_grub_config
+
+    - name: Read Current GRUB Command Line
+      ansible.builtin.command: grep "^GRUB_CMDLINE_LINUX_DEFAULT=" /etc/default/grub
+      register: restore_grub_cmdline
+      changed_when: false
+      when: restore_grub_config.stat.exists
+
+    - name: Remove psi=1 From GRUB Command Line
+      ansible.builtin.lineinfile:
+        path: /etc/default/grub
+        regexp: 'psi=1'
+        state: absent
+      register: restore_grub_psi
+      when: restore_grub_config.stat.exists
+
+    - name: Remove consoleblank=0 From GRUB Command Line
+      ansible.builtin.lineinfile:
+        path: /etc/default/grub
+        regexp: 'consoleblank=0'
+        state: absent
+      register: restore_grub_consoleblank
+      when: restore_grub_config.stat.exists
+
+    - name: Regenerate GRUB Config (Debian)
+      ansible.builtin.command: update-grub
+      when:
+        - restore_grub_config.stat.exists
+        - restore_grub_psi.changed or restore_grub_consoleblank.changed
+        - ansible_facts['os_family'] == 'Debian'
+      changed_when: true
+
+    - name: Regenerate GRUB Config (RedHat)
+      ansible.builtin.command: grub2-mkconfig -o /boot/grub2/grub.cfg
+      when:
+        - restore_grub_config.stat.exists
+        - restore_grub_psi.changed or restore_grub_consoleblank.changed
+        - ansible_facts['os_family'] == 'RedHat'
+      changed_when: true
+
+    - name: Reload Systemd Daemon
+      ansible.builtin.systemd:
+        daemon_reload: true
