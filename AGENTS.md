@@ -129,3 +129,7 @@ Every commit subject must match `type(optional-scope): subject` where type is on
 ## CI Scripts Write Violations to Stderr
 
 When a validation script detects violations, each violation line is written to stderr via `sys.stderr.write()`. Only the summary line (`FAIL <count>` or `PASS`) goes to stdout. This separates diagnostics from status: stdout is machine-parseable (one word: PASS or FAIL), stderr carries human-readable details. The CI runner captures both streams and surfaces them in the job log.
+
+## Passing Tests Does Not Mean Done Well
+
+A test that passes validates syntax, not correctness. Ansible check-mode verifies YAML parses and tasks can be planned; it does not verify that the deployed config achieves its intended effect. A regex that passes yamllint may contain spaces that break process matching. A sysctl that applies may have a threshold too late to prevent OOM. A thermal monitor that runs may write arbitrary strings to kernel sysfs without validation. Every change must be audited for semantic correctness against the problem it solves, not just against the linter that validates structure. If a test passes but the underlying problem persists, the test is insufficient and the fix is incomplete.

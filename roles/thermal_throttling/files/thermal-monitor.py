@@ -3,10 +3,12 @@ import yaml
 import os
 import glob
 import sys
+import tempfile
 
 CONFIG_PATH = "/etc/thermal-throttling/config.yml"
 THROTTLED_MARKER = "THERMAL_THROTTLING_ACTIVE=1"
 HYSTERESIS_MILLIDEGREES = 3000
+ALLOWED_EPP_VALUES = {"performance", "balance_performance", "balance_power", "power"}
 
 IGNORED_ZONE_TYPES = {"ACPI Fan", "acpitz", "iwlwifi_1", "pch_cannonlake", "pch_cometlake", "pch_tigerlake", "INT3400 Thermal"}
 
@@ -18,9 +20,16 @@ full_jobs = config["full_parallelism_jobs"]
 reduced_jobs = config["reduced_parallelism_jobs"]
 zone_glob = config["thermal_zone_glob"]
 profile_path = config["profile_d_path"]
-epp_idle = config["energy_performance_preference_idle"]
-epp_hot = config["energy_performance_preference"]
+epp_throttled = config["energy_performance_preference_throttled"]
+epp_normal = config["energy_performance_preference_normal"]
 epp_sysfs_glob = config["epp_sysfs_glob"]
+
+if epp_throttled not in ALLOWED_EPP_VALUES:
+    sys.stderr.write("invalid epp_throttled: {}\n".format(epp_throttled))
+    sys.exit(1)
+if epp_normal not in ALLOWED_EPP_VALUES:
+    sys.stderr.write("invalid epp_normal: {}\n".format(epp_normal))
+    sys.exit(1)
 
 is_throttled = False
 with open(profile_path) as pf:
@@ -49,26 +58,40 @@ for zone_path in sorted(glob.glob(zone_glob)):
         break
 
 if hot and not is_throttled:
-    with open(profile_path, "w") as pf:
-        pf.write(
+    fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(profile_path), suffix=".tmp")
+    try:
+        os.write(fd, (
             "export CARGO_BUILD_JOBS={}\n"
             "export MAKEFLAGS=-j{}\n"
             "export NINJAJOBS={}\n"
             "export {}\n".format(reduced_jobs, reduced_jobs, reduced_jobs, THROTTLED_MARKER)
-        )
-    os.chmod(profile_path, 0o644)
+        ).encode())
+        os.close(fd)
+        os.chmod(tmp_path, 0o644)
+        os.rename(tmp_path, profile_path)
+    except BaseException:
+        os.close(fd) if not os.get_inheritable(fd) else None
+        os.unlink(tmp_path)
+        raise
     for epp_path in sorted(glob.glob(epp_sysfs_glob)):
         with open(epp_path, "w") as ef:
-            ef.write(epp_idle)
+            ef.write(epp_throttled)
 
 if not hot and is_throttled:
-    with open(profile_path, "w") as pf:
-        pf.write(
+    fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(profile_path), suffix=".tmp")
+    try:
+        os.write(fd, (
             "export CARGO_BUILD_JOBS={}\n"
             "export MAKEFLAGS=-j{}\n"
             "export NINJAJOBS={}\n".format(full_jobs, full_jobs, full_jobs)
-        )
-    os.chmod(profile_path, 0o644)
+        ).encode())
+        os.close(fd)
+        os.chmod(tmp_path, 0o644)
+        os.rename(tmp_path, profile_path)
+    except BaseException:
+        os.close(fd) if not os.get_inheritable(fd) else None
+        os.unlink(tmp_path)
+        raise
     for epp_path in sorted(glob.glob(epp_sysfs_glob)):
         with open(epp_path, "w") as ef:
-            ef.write(epp_hot)
+            ef.write(epp_normal)

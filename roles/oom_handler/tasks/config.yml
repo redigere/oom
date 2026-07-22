@@ -7,20 +7,21 @@
     state: present
     reload: true
 
+- name: Build EarlyOOM Process Classification Regex Patterns
+  ansible.builtin.set_fact:
+    oom_handler_prefer_regex: >-
+      (rustc|cargo|cc1plus|clang|make|ninja|ld|lld|mold|gold|gcc|g\+\+|javac|kotlinc|gradle|maven|bazel|bun|deno|go|node|npm|pnpm|yarn|pip|python|ruby|perl|docker|podman|containerd|postgres|mysql|redis|mongod|webpack|vite|esbuild|ts-node|java)
+    oom_handler_avoid_regex: >-
+      (gnome-shell|Xorg|Xwayland|pipewire|pulseaudio|systemd|dbus|earlyoom|bash|codium|vscode|code|intellij|idea|pycharm|android-studio|agy|antigravity-ide|brave|vivaldi|opera|firefox|chromium|chrome|electron|skype|slack|teams|discord|spotify)
+
 - name: Write EarlyOOM Config With Hardware-Scaled Memory and Swap Thresholds
   ansible.builtin.copy:
     dest: /etc/default/earlyoom
     content: >-
       EARLYOOM_ARGS="-m {{ system_discovery_earlyoom_min_free_pct }},{{
       (system_discovery_earlyoom_min_free_pct | int) + 2 }}
-      -S 750 -p
-      --prefer '(rustc|cargo|cc1plus|clang|make|ninja|ld|lld|mold|gold|gcc|g\+\+
-      |javac|kotlinc|gradle|maven|bazel|bun|deno|go|node|npm|pnpm|yarn|pip|python
-      |ruby|perl|docker|podman|containerd|postgres|mysql|redis|mongod|webpack|vite
-      |esbuild|ts-node|java)'
-      --avoid '(gnome-shell|Xorg|Xwayland|pipewire|pulseaudio|systemd|dbus
-      |earlyoom|bash|codium|vscode|code|intellij|idea|pycharm|android-studio
-      |agy|antigravity-ide|brave|vivaldi|opera|firefox|chromium|chrome|electron
-      |skype|slack|teams|discord|spotify)'"
+      -s 10 -p
+      --prefer '{{ oom_handler_prefer_regex }}'
+      --avoid '{{ oom_handler_avoid_regex }}'"
     mode: '0644'
   register: oom_handler_earlyoom_config

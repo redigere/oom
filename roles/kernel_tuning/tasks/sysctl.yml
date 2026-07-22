@@ -1,9 +1,4 @@
 ---
-- name: Purge Old Poisoned OOM Sysctl Config Before Applying New Values
-  ansible.builtin.file:
-    path: /etc/sysctl.d/99-oom-tuning.conf
-    state: absent
-
 - name: Apply OOM Prevention Kernel Parameters
   ansible.posix.sysctl:
     name: "{{ item.key }}"
