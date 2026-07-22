@@ -104,14 +104,15 @@ items:
     status: completed
     description: >-
       Thermal throttling role implemented. governor.yml sets
-      energy_performance_preference from config.json data,
+      energy_performance_preference from config.yml data,
       persisted via tmpfiles.d. monitor.yml writes all tunable
-      parameters to /etc/thermal-throttling/config.json as
+      parameters to /etc/thermal-throttling/config.yml as
       pure data (threshold, parallelism, sysfs paths, output
       paths). Python script thermal-monitor.py reads config,
       monitors /sys/class/thermal/thermal_zone*/temp, and
       writes /etc/profile.d/dev-limits.sh with reduced or
       full build parallelism via systemd timer every 2 min.
+      Switches EPP to power when hot, restores when cool.
       Zero shell, zero hardcoded values in code.
   - task: "cross_family: thermal_validation"
     status: completed
@@ -306,3 +307,44 @@ items:
       spuriously during I/O and swap pressure by extending Mutter's
       check-alive-timeout to 60000ms using a system-wide gschema override
       deployed via the new desktop_responsiveness role.
+  - task: "fix: swappiness: revert_to_10"
+    status: completed
+    description: >-
+      vm.swappiness changed from 100 back to 10. Value 100 forced
+      constant zRAM compress/decompress on every context switch,
+      freezing apps like Brave. swappiness=10 drops page cache first,
+      keeps application memory hot in physical RAM.
+  - task: "fix: earlyoom: prefer_avoid_split"
+    status: completed
+    description: >-
+      Removed invalid -s 500 flag (expects 0-100 percent). Added
+      --prefer for memory-hungry ephemeral processes (cargo, make,
+      docker, etc.) so earlyoom kills them first. Narrowed --avoid
+      to system-critical only (gnome-shell, Xorg, pipewire, systemd,
+      IDEs, browsers). Prevents kernel OOM from killing jobs when
+      earlyoom cannot find victims.
+  - task: "fix: thermal: epp_balance_and_switching"
+    status: completed
+    description: >-
+      EPP changed from performance to balance_performance to reduce
+      heat generation. Thermal monitor now switches EPP to power
+      when temperature exceeds threshold and restores when cool.
+      Config includes epp_sysfs_glob and idle EPP value.
+  - task: "fix: earlyoom: min_free_threshold"
+    status: completed
+    description: >-
+      system_discovery_earlyoom_min_free_pct formula changed from
+      40000/RAM to 80000/RAM with bounds 5-15 (was 3-10). Triggers
+      earlyoom earlier to prevent OOM kills under memory pressure.
+  - task: "feat: restore: ansible_playbook"
+    status: completed
+    description: >-
+      restore.yml playbook replaces inline shell commands in Makefile
+      clean target. Reverts all tuning: stops services, removes
+      configs, restores sysctl defaults, unmasks systemd-oomd.
+  - task: "fix: zram: debian_task_split"
+    status: completed
+    description: >-
+      config-debian.yml split from single shell task into separate
+      idempotent tasks: stop service, check active, deactivate,
+      remove device, start. Better error handling and dry-run support.
